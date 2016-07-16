@@ -214,7 +214,7 @@ public class ExtractForm extends javax.swing.JFrame {
     
         while (System.currentTimeMillis() < (timeDue - 10)) {
             root.init(gameX);
-            MCTSNode.runMCTS(root, gameX.getNumberOfActivePills());
+            MCTSNode.runMCTS(root, gameX.getNumberOfActivePills(),0);
         }
 
         if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL) {

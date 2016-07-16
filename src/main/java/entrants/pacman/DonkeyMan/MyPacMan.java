@@ -1,6 +1,8 @@
 package entrants.pacman.DonkeyMan;
 
 import pacman.controllers.PacmanController;
+import pacman.game.Constants;
+import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
@@ -43,11 +45,31 @@ public class MyPacMan extends PacmanController {
          
         int numActivePill = gameX.getNumberOfActivePills();
         
-        while (System.currentTimeMillis() < (timeDue -10)) {
+        // get timeOfEidibleGhost
+        int GhostTimeInit = 0;
+        
+        
+        for( GHOST ghost : GHOST.values())
+            if (gameX.isGhostEdible(ghost)) {
+                
+                double len = gameX.getDistance(gameX.getPacmanCurrentNodeIndex(), 
+                                                gameX.getGhostCurrentNodeIndex(ghost),
+                                                Constants.DM.PATH);
+                int time = gameX.getGhostEdibleTime(ghost);
+                if (len < time)
+                GhostTimeInit+= time ;
+            }
+        
+        if (GhostTimeInit>0 )
+            MCTSNode.currentTactic = 2;
+        
+        // RUN MCTS
+        while (System.currentTimeMillis() < (timeDue -1)) {
             root.init(gameX);
-            MCTSNode.runMCTS(root, numActivePill);
+            MCTSNode.runMCTS(root, numActivePill,GhostTimeInit);
         }
         
+        // re-check tactic
          MCTSNode.currentTactic = 0;
          if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL)  
                 MCTSNode.currentTactic = 1;
@@ -55,10 +77,10 @@ public class MyPacMan extends PacmanController {
          
  
         MOVE nextMove = root.selectBestMove(gameX);
-      //  System.out.println(root.new_visitedCount);
+        System.out.println(root.new_visitedCount);
         
-//       if (System.currentTimeMillis() < timeDue) System.out.println("OK");
-//        else System.out.println("FAIL");
+       if (System.currentTimeMillis() < timeDue) System.out.println("OK");
+        else System.out.println("FAIL");
     
        
         

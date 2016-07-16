@@ -386,6 +386,9 @@ public class MCTSNode {
 //            }
 //            simulatedGame.advanceGame(nextMove, listDangerGhostMove);
             currentPacManNode = simulatedGame.getPacmanCurrentNodeIndex();
+            
+            
+            
 
         }
         int currentPill = simulatedGame.getNumberOfActivePills();
@@ -438,7 +441,7 @@ public class MCTSNode {
 
     }
 
-    public static void runMCTS(MCTSNode root, int originPill) {
+    public static void runMCTS(MCTSNode root, int originPill, int GhostTimeInit) {
 
         if (root.isLeaf()  ) {
 
@@ -488,7 +491,7 @@ public class MCTSNode {
 
             boolean isReachChild = root.treePhase(originPill, currentBestChild);
 
-            if (!isReachChild) {
+            if (!isReachChild  ) {
 
                 double reward[] = new double[3];
                 reward = root.playOutPhase(originPill);
@@ -503,7 +506,7 @@ public class MCTSNode {
                 if (currentBestChild.isEndNode) 
                     currentBestChild.rewardPlayout = new double[] {1,1,1,};
                 else
-                    runMCTS(currentBestChild, originPill);
+                    runMCTS(currentBestChild, originPill,GhostTimeInit);
 
                 for (MCTSNode child : root.listChild) {
                     for (int i = 0; i < 3; i++) {
