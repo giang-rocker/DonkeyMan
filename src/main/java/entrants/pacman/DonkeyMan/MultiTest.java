@@ -7,6 +7,7 @@ package entrants.pacman.DonkeyMan;
 
 import examples.commGhosts.POCommGhosts;
 import java.util.EnumMap;
+import pacman.Executor;
 import pacman.controllers.Controller;
 import pacman.controllers.examples.po.POGhosts;
 import pacman.game.Constants;
@@ -20,47 +21,48 @@ import pacman.game.Game;
  * @author Giang
  */
 public class MultiTest {
-    
+
     public static void main(String[] args) {
-       Game gameX = new Game(0);
-        Controller<MOVE> pacManController = new MyPacMan();
-        Controller<EnumMap<Constants.GHOST, MOVE>> ghostController = new POCommGhosts(50);
-        
-        new Thread(pacManController).start();
-        new Thread(ghostController).start();
-        int move =0 ;
+        Game gameX = new Game(0);
+         Executor executor = new Executor(true, true);
+
+        int move = 0;
         int DELAY = 40;
-        int numOfGame = 5;
-        
-        for (int i =0; i < numOfGame; i ++) {
+        int numOfGame = 100;
+
+        for (int i = 0; i < numOfGame; i++) {
+
+            System.out.print("Running " + (i + 1) + "/" + numOfGame);
+
             double startTime = System.currentTimeMillis();
-        while (!gameX.gameOver()) {
-            pacManController.update(gameX.copy(), System.currentTimeMillis() + DELAY);
-            ghostController.update(gameX.copy(), System.currentTimeMillis() + DELAY);
+            int currentLevel = -1;
+            while (!gameX.gameOver()) {
+                Controller<MOVE> pacManController = new MyPacMan();
+                SimulateGhostMove ghostController = new SimulateGhostMove(50);
+                
+                 gameX.advanceGame(pacManController.getMove(gameX.copy(), System.currentTimeMillis() + DELAY), ghostController.getMove(gameX.copy()));
 
-            try {
-                Thread.sleep(DELAY);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                move++;
+
+                if (currentLevel != gameX.getCurrentLevel()) {
+                    System.out.print(" " + gameX.getCurrentLevel());
+                    currentLevel = gameX.getCurrentLevel();
+                }
+
+                pacManController.terminate();
+              
+
             }
+            System.out.println("");
+            double endTime = System.currentTimeMillis();
+            System.out.println("Game " + (i+1) + " is finished at " + (gameX.getCurrentLevel()+1) + " level(s) ;"
+                    + gameX.getTotalTime() + " time step(s);"
+                    + " Score : " + gameX.getScore()
+                    + " Time : " + (((endTime - startTime) / 1000) / 60) + " minutes "
+            );
 
-            gameX.advanceGame(pacManController.getMove(), ghostController.getMove());
-            
-            move ++;
-          
-        }
-        
-        double endTime = System.currentTimeMillis();
-        System.out.println("Game " + i + " is finished at " + gameX.getCurrentLevel() + " level(s) ;"
-                                                            + move +" move(s);"
-                                                            + " Score : "  + gameX.getScore()
-                                                            + " Time : "  + (((endTime - startTime) / 1000) / 60) +" minutes "
-        
-                                                                                );
-         
-        gameX = new Game(0);
-        move=0;
+            gameX = new Game(0);
+            move = 0;
         }
     }
-    
 }

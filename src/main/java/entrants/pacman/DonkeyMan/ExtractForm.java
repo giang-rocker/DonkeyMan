@@ -202,27 +202,65 @@ public class ExtractForm extends javax.swing.JFrame {
         int currentPacMan = game.getPacmanCurrentNodeIndex();
 
         // clone game
+        
+     
+        // clone game
         String strGameState = game.getGameState();
         Game gameX = new Game(0);
         gameX.setGameState(strGameState);
-
-      
+        
+        if (gameX.wasPacManEaten())
+           System.out.println("DIE DIE DIE !!!!");
+    
+        
+            {
                 root = new MCTSNode();
-                root.init(gameX);
+                root.init(gameX );
                 root.createEntireTree(root, 0);
                 MCTSNode.currentTactic = 0;
-    
-        while (System.currentTimeMillis() < (timeDue - 10)) {
+            }
+        
+            
+         
+        int numActivePill = gameX.getNumberOfActivePills();
+        
+        // get timeOfEidibleGhost
+        int ghostTimeInit = 0;
+        int numOfGhostInRange = 0;
+        boolean isGhostInRange = false;
+        EnumMap<GHOST, Integer> listEdibleGhost = new EnumMap<>(GHOST.class);
+
+        
+        for( GHOST ghost : GHOST.values()){
+            
+               int time = gameX.getGhostEdibleTime(ghost);                
+               time = Integer.max(0,time);
+               double len ;
+               if (time!=0){
+                   len = gameX.getDistance(gameX.getPacmanCurrentNodeIndex(), gameX.getGhostCurrentNodeIndex(ghost), Constants.DM.PATH);
+                   if (len < time) isGhostInRange = true;
+               }
+               
+               listEdibleGhost.put(ghost, time);
+        }
+        
+        
+        // RUN MCTS
+        while (System.currentTimeMillis() < (timeDue -3)) {
             root.init(gameX);
-            MCTSNode.runMCTS(root, gameX.getNumberOfActivePills(),0);
+            MCTSNode.runMCTS(root, numActivePill,listEdibleGhost);
         }
-
-        if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL) {
-            MCTSNode.currentTactic = 1;
-        } else {
-            MCTSNode.currentTactic = 0;
-        }
-
+        
+        // re-check tactic
+         MCTSNode.currentTactic = 0;
+         if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL)  
+             if (isGhostInRange)
+                MCTSNode.currentTactic = 2;
+             else 
+                 MCTSNode.currentTactic = 1;
+         
+         
+ 
         MOVE nextMove = root.selectBestMove(gameX);
         //    System.out.println("FROM  " + gameX.getPacmanCurrentNodeIndex() + " MOVE MAKE " + nextMove +" WILL REACH " + gameX.getNeighbour(currentPacMan, nextMove));
 
@@ -238,6 +276,7 @@ public class ExtractForm extends javax.swing.JFrame {
         System.out.println("");
         MCTSNode.print(root);
         System.out.println("\nEND MCTS");
+        System.out.println("SELECT MOVE " + nextMove +" to reach " + root.bestChild.nodeIndex);
         
         updateGameInformation(this.game);
         repaint();
