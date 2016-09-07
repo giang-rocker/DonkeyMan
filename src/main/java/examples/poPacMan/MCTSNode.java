@@ -26,8 +26,8 @@ public class MCTSNode {
     // ALL DISTANCE CANCULATE BY 
     DM measureMethod = DM.PATH;
     // some threshole
-    final int LIMIT_LENGHT = 40 ;
-    final int LIMIT_MOVE = 60;
+    final int LIMIT_LENGHT = 15 * 4;
+    final int LIMIT_MOVE = 200;
     final int MIN_VISITED = 1;
     final int DEPTH_LIMIT = 2;
      
@@ -193,12 +193,25 @@ public class MCTSNode {
         while (!simulatedGame.wasPacManEaten() && currentPacManNode != nodeTaget) {
             currentPacManNode = simulatedGame.getPacmanCurrentNodeIndex();
 
-            SimulateGhostMove ghostsMove = new SimulateGhostMove();
-            EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-            listGhostMove =      ghostsMove.getMove(simulatedGame, System.currentTimeMillis());
-            
-             MOVE nextMove= this.listChild[this.selectedChild].moveToReach;
-           
+            MOVE nextMove = null;
+
+            nextMove = simulatedGame.getNextMoveTowardsTarget(currentPacManNode, nodeTaget, measureMethod);
+            //  nextMove =  this.listChild[this.selectedChild].moveToReach;
+
+            EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<GHOST, MOVE>(GHOST.class);
+
+            for (GHOST ghost : GHOST.values()) {
+                // if ghost require a move
+                MOVE dangerMove = this.game.getNextMoveTowardsTarget(this.game.getPacmanCurrentNodeIndex(), this.game.getGhostCurrentNodeIndex(ghost), measureMethod);
+
+                if (this.game.doesGhostRequireAction(ghost)) {
+                    listGhostMove.put(ghost, dangerMove);
+                } else {
+                    listGhostMove.put(ghost, simulatedGame.getGhostLastMoveMade(ghost));
+                }
+
+            }
+
             simulatedGame.advanceGame(nextMove, listGhostMove);
 
             move++;
@@ -222,27 +235,43 @@ public class MCTSNode {
 
     }
 
-   public double[] playOutPhase(int initialPill) {
+// PLAYOUT PHASE
+    public double[] playOutPhase(int initialPill) {
         int steps = LIMIT_MOVE;
         int move = 0;
 
-        double rewardX[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
+        double reward[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
 
- 
+//        Game simulatedGame = new Game(0);
+//        simulatedGame = this.game.copy();
         Game simulatedGame = this.game.copy();
 
         int oldScore = simulatedGame.getScore();
 
         while (move <= steps && !simulatedGame.wasPacManEaten()) {
-           
-            SimulatePacmanMove pacMove = new  SimulatePacmanMove();
-            SimulateGhostMove ghostsMove = new SimulateGhostMove();
-            MOVE nextMove= pacMove.getMove(simulatedGame, System.currentTimeMillis());
-            EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-            listGhostMove =      ghostsMove.getMove(simulatedGame, System.currentTimeMillis());
-            
-            
-            simulatedGame.advanceGame(nextMove, listGhostMove);
+            EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<GHOST, MOVE>(GHOST.class);
+
+            // get Ghost current Move
+            for (GHOST ghost : GHOST.values()) {
+                // if ghost require a move
+                MOVE dangerMove = this.game.getNextMoveTowardsTarget(this.game.getPacmanCurrentNodeIndex(), this.game.getGhostCurrentNodeIndex(ghost), measureMethod);
+                MOVE safeMove = this.game.getNextMoveAwayFromTarget(this.game.getPacmanCurrentNodeIndex(), this.game.getGhostCurrentNodeIndex(ghost), measureMethod);
+
+//                if (this.game.doesGhostRequireAction(ghost)) {
+//                    if (this.game.isGhostEdible(ghost))
+//                        listGhostMove.put(ghost, safeMove);
+//                    else
+//                    listGhostMove.put(ghost, dangerMove);
+//                } else 
+                {
+                    listGhostMove.put(ghost, simulatedGame.getGhostLastMoveMade(ghost));
+                }
+
+            }
+            // Keep currentMove F ghost
+            MOVE pacmanMove[] = simulatedGame.getPossibleMoves(simulatedGame.getPacmanCurrentNodeIndex(), simulatedGame.getPacmanLastMoveMade());
+            Random R = new Random();
+            simulatedGame.advanceGame(pacmanMove[R.nextInt(pacmanMove.length)], listGhostMove);
             // simulatedGame.advanceGame(simulateMove(simulatedGame), listGhostMove);
             move++;
 
@@ -250,21 +279,44 @@ public class MCTSNode {
 
         //set reward reward
         if (!simulatedGame.wasPacManEaten()) {
-            rewardX[0] = 1;
+            reward[0] = 1;
 
         } else {
-            //   debug("DIE WHEN PLAY OUT");
-            rewardX[0] = 0;
+            //    System.out.println("DIE WHEN PLAY OUT");
+            reward[0] = 0;
         }
 
-        rewardX[1] = (1.0 * (initialPill - simulatedGame.getNumberOfActivePills()) / initialPill);
-        rewardX[2] = (simulatedGame.getScore() - oldScore);
-        
-   //    debug("REWARD PLAYOUT AT " +this.nodeIndex + " - "+rewardX[0] + " | " + rewardX[1] +  " | " + rewardX[2] );
-        
-        this.reward = rewardX;
-        return rewardX;
-        //debug("reward PlayOut :" +simulatedGame.getScore()+" - "+ this.reward  );
+        reward[1] = (1.0 * (initialPill - simulatedGame.getActivePillsIndices().length) / initialPill);
+        reward[2] = (simulatedGame.getScore() - oldScore);
+
+        this.reward = reward;
+        return reward;
+        // System.out.println("reward PlayOut :" +simulatedGame.getScore()+" - "+ this.reward  );
+    }
+
+    // GHOST PLAY-OUT STRATEGY
+    /* 1ST STRATEGY GREEDY E = 0.2 */
+    EnumMap<GHOST, MOVE> getMoveGhostPlayOutStrategy(Game simulatedGame) {
+        Random R = new Random();
+        EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<GHOST, MOVE>(GHOST.class);
+
+        // greeddy epx
+        float ep = R.nextFloat();
+        ep = ep - (int) ep;
+        // RANDOM MOVE
+        if (ep < 0.2f) {
+
+            for (GHOST ghost : GHOST.values()) {
+                // If it is > 0 then it is visible so no more PO checks
+                MOVE possibleMove[] = simulatedGame.getPossibleMoves(simulatedGame.getGhostCurrentNodeIndex(ghost));
+                listGhostMove.put(ghost, possibleMove[R.nextInt(possibleMove.length)]);
+            }
+        } else {
+            //GHOST BASE ON RULE
+
+        }
+
+        return listGhostMove;
     }
 
 // SELECT BY UCB
@@ -300,7 +352,7 @@ public class MCTSNode {
         index = 0;
 
         for (MCTSNode child : listChild) {
-            double uctValue =  child.sum_rewardPills*child.avg_rewardSurvival
+            double uctValue =  child.avg_rewardPills*child.avg_rewardSurvival
                     + Math.sqrt(Math.log(this.visitedCount) / (child.visitedCount));
 
             // small random number to break ties randomly in unexpanded nodes
@@ -313,7 +365,27 @@ public class MCTSNode {
 
         }
         
-         
+        if (bestValueSurvival >=MIN_SURVIVAL && bestValueReward == 0) {
+
+            bestValueReward = Double.MIN_VALUE;
+            selectedReward = 0;
+            index = 0;
+            for (MCTSNode child : this.listChild) {
+
+                int nearestPill = (child.game.getClosestNodeIndexFromNodeIndex(child.game.getPacmanCurrentNodeIndex(), child.game.getActivePillsIndices(), DM.MANHATTAN));
+
+                double pathRate;
+                pathRate = (MAX_LENGHT - child.game.getManhattanDistance(child.nodeIndex, nearestPill) * 1.0) / MAX_LENGHT;
+
+                if ((child.avg_rewardSurvival * pathRate) > bestValueReward) {
+                    bestValueReward = child.avg_rewardSurvival * pathRate;
+                    selectedReward = index;
+                }
+                index++;
+
+            }
+        }
+
         if (bestValueSurvival >= MIN_SURVIVAL) {
             this.selectedChild = selectedReward;
         } else {
@@ -326,10 +398,19 @@ public class MCTSNode {
 
 // UPDATE VALUE    
     public void updateStats(double[] value) {
-       
-        this.sum_rewardSurvival += value[0];
-        this.sum_rewardPills += value[1];
-        this.sum_rewardGhost += value[2];
+        double tempReward[] = new double[3];
+        if (this.isConner) {
+            tempReward[0] = value[0] * riskConner;
+            tempReward[1] = value[1] ;
+            tempReward[2] = value[2]  ;
+        } else {
+            tempReward[0] = value[0] ;
+            tempReward[1] = value[1] ;
+            tempReward[2] = value[2];
+        }
+        this.sum_rewardSurvival += tempReward[0];
+        this.sum_rewardPills += tempReward[1];
+        this.sum_rewardGhost += tempReward[2];
         this.visitedCount++;
         // NEED TO BE MODIFIED LATER
 
@@ -380,17 +461,6 @@ public class MCTSNode {
             if (tempReward[0] == 1) {
                 //      System.out.println("SELECT " + root.listChild[root.selectedChild].nodeIndex +" to move" );
                 runMCTS(root.listChild[root.selectedChild], initialPill);
-                
-           
-                 root.updateStats(root.listChild[root.selectedChild].reward);
-                 
-                 if (root.listChild[root.selectedChild].max_rewardSurvival > root.max_rewardSurvival)
-                 {
-                     root.max_rewardSurvival = root.listChild[root.selectedChild].max_rewardSurvival;
-                     root.max_rewardPills = root.listChild[root.selectedChild].max_rewardPills;
-                 }
-                  
-                
             } else {
                 root.listChild[root.selectedChild].updateStats(tempReward);
                 //      System.out.println("DIE TREE Phase from middle of tree when run from " +root.nodeIndex + " to " +root.listChild[root.selectedChild].nodeIndex );
@@ -403,23 +473,17 @@ public class MCTSNode {
             root.playOutPhase(initialPill);
             //         System.out.println("reward playout at " + root.nodeIndex + " :  " +root.reward[0]+"  - "+ root.game.getActivePillsIndices().length );
             root.updateStats(root.reward);
-            
-            
-           root.max_rewardSurvival = root.sum_rewardSurvival/root.visitedCount;
-           root.max_rewardPills= root.sum_rewardPills * root.max_rewardSurvival;
-           root.max_rewardGhost= root.max_rewardGhost * root.max_rewardSurvival;
         }
 
-       
-        
-        
-        
+        if (root.parentNode != null) {
+            root.parentNode.updateStats(root.reward);
+        }
 
     }
 
     public MOVE selectBestMove(Game gameX, boolean isCreateMCTS) {
         // for the unexpected case
-      
+
         if (this.listChild.length == 0) {
             return MOVE.NEUTRAL;
         }
@@ -430,10 +494,7 @@ public class MCTSNode {
         int selecSurvial = 0;
         int selecReward = 0;
         int index = 0;
-         MOVE nextMove;
 
-        int selectedChildX = 0;
-  /*
         boolean isSafe = true;
         boolean foundPill = false;
 
@@ -492,7 +553,9 @@ public class MCTSNode {
             }
         }
 
-       
+        MOVE nextMove;
+
+        int selectedChildX = 0;
         if (maxSurvival >= MIN_SURVIVAL) {
             selectedChildX = selecReward;
         } else {
@@ -502,40 +565,6 @@ public class MCTSNode {
         nextMove = findMovebyBFSWithGhostCheck(gameX, this.childNodeIndex[selectedChildX], this.listChild[selectedChildX].moveToReach);
         this.selectedChild = selectedChildX;
       //   System.out.println("MOVE " + nextMove +" to " + this.listChild[selectedChildX].nodeIndex);
-*/       
-
-    for (MCTSNode child : this.listChild) {
-
-            if ((child.max_rewardSurvival) > maxSurvival) {
-                maxSurvival = child.max_rewardSurvival;
-                selecSurvial = index;
-            }
-            index++;
-
-        }
-    
-    if (maxSurvival > MIN_SURVIVAL){
-        index = 0;
-      for (MCTSNode child : this.listChild) {
-            if (((child.max_rewardPills  ) > maxRewardPill)) {
-                maxRewardPill = maxRewardPill ;
-                selecReward = index;
-            }
-             
-            index++;
-
-        }
-    }
-
-      if (maxSurvival > MIN_SURVIVAL) {
-            selectedChildX = selecReward;
-        } else {
-            selectedChildX = selecSurvial;
-        }
-    
-       // System.out.println(" SELECT " + this.childNodeIndex[selectedChildX] +" to move");
-        nextMove = findMovebyBFSWithGhostCheck(gameX, this.childNodeIndex[selectedChildX], this.listChild[selectedChildX].moveToReach);
-     
         return nextMove;
 
     }

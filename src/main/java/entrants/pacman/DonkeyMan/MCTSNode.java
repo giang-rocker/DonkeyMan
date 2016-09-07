@@ -24,7 +24,7 @@ import pacman.game.Game;
 public class MCTSNode {
 
     /*=====================================VARIABLES==========================================*/
-    // SIZE GAME : 36X36 NODES
+    // SIZE GAME : 36X36 NODES 25 x 3?
     // ALL DISTANCE CANCULATE BY 
     Constants.DM measureMethod = Constants.DM.PATH;
 
@@ -37,10 +37,10 @@ public class MCTSNode {
     final static double esp = 0.000001;
     final static double DECREASE_DECAY = 0.8;
     final static double DECREASE_CHANGEMOVE = 0.8;
-    final static double DECREASE_WASTEMOVE = 0.9;
+    final static double DECREASE_WASTEMOVE = 0.5;
 
     double MIN_SURVIVAL;
-    final static double NOMAL_MIN_SURVIVAL = 0.6;
+    final static double NOMAL_MIN_SURVIVAL = 0.7;
     final static double DANGER_MIN_SURVIVAL = 0.8;
 
     final int MAX_LENGHT = 36 + 36; // by game size and Mahattan distance
@@ -84,6 +84,7 @@ public class MCTSNode {
     double decreaseWasteMove;
 
     public static int currentTactic; // 0 : survival | 1 : pill  |  2 : ghost
+    public static boolean hasJustChangeMove = false ;
 
     /*=====================================FUCNTIONS==========================================*/
     // instruction
@@ -121,6 +122,7 @@ public class MCTSNode {
         isFirstChoise = true;
         decreaseWasteMove = 1;
         hasJustEattenGhost = false;
+         
 
     }
 
@@ -135,7 +137,12 @@ public class MCTSNode {
 //        if (!_game.isJunction(_game.getPacmanCurrentNodeIndex()) && !MCTSNode.isConner(_game, _game.getPacmanCurrentNodeIndex())) {
 //            this.moveToReach = MOVE.NEUTRAL;
 //        } else 
-        this.moveToReach = this.game.getPacmanLastMoveMade();
+        if (currentTactic == 2 && !hasJustChangeMove) {
+            hasJustChangeMove = true;
+            this.moveToReach = MOVE.NEUTRAL;
+        } else {
+            this.moveToReach = this.game.getPacmanLastMoveMade();
+        }
 
     }
 
@@ -316,6 +323,31 @@ public class MCTSNode {
 
     }
 
+    public EnumMap<GHOST, MOVE> GhostGetRandomMove(Game game) {
+        EnumMap<GHOST, MOVE> myMoves = new EnumMap<GHOST, MOVE>(GHOST.class);
+        Random rnd = new Random ();
+        for (GHOST ghost : GHOST.values()) {
+            if (game.getGhostCurrentNodeIndex(ghost)==game.getGhostInitialNodeIndex()) continue;
+                
+            if (rnd.nextInt(100) <10) {
+             myMoves.put(ghost, game.getGhostLastMoveMade(ghost));
+             continue;
+            }
+            
+              MOVE[] possibleMoves = game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
+              
+          //    System.out.println(ghost + " " + game.getGhostCurrentNodeIndex(ghost) +" " + game.getGhostLastMoveMade(ghost));
+              
+              if (possibleMoves.length==0) continue;
+              MOVE nextMove =  possibleMoves[rnd.nextInt(possibleMoves.length)];
+              myMoves.put(ghost, nextMove);
+        }
+            
+
+        return myMoves;
+
+    }
+
     public double[] playOutPhase(int initialPill, EnumMap<GHOST, Integer> originEdibleGhost) {
         int steps = LIMIT_MOVE;
         int move = 0;
@@ -327,6 +359,7 @@ public class MCTSNode {
         }
 
         double rewardX[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
+        rewardX[2] = this.rewardPlayout[2];
 
         //Game simulatedGame = this.game.copy();
         Game simulatedGame = this.game;
@@ -335,16 +368,30 @@ public class MCTSNode {
         int currentLevel = simulatedGame.getCurrentLevel();
         double rewardGhost = 0;
 
-        EnumMap<GHOST, Integer> currentEdibleGhost = new EnumMap<>(GHOST.class);;
-
+     
         while (move <= steps && !simulatedGame.wasPacManEaten()) {
-
+            
+            if (totalEdibleTime!=0 && simulatedGame.wasPowerPillEaten() ) break;
+            
+        EnumMap<GHOST, Integer> currentEdibleGhost = new EnumMap<>(GHOST.class);;
             MOVE nextMove = PacmanGetMove(simulatedGame);
 
             SimulateGhostMove ghostsMove = new SimulateGhostMove();
             EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-            listGhostMove = ghostsMove.getMove(simulatedGame);
-
+            //STRATEGY MOVE
+          //  listGhostMove = ghostsMove.getMove(simulatedGame);
+           
+            // RANDOM MOVES
+                listGhostMove = GhostGetRandomMove (simulatedGame);
+                
+            
+//               for (GHOST ghost : GHOST.values()) 
+//                if (simulatedGame.doesGhostRequireAction(ghost))
+//                listGhostMove.put(ghost, simulatedGame.getNextMoveTowardsTarget(simulatedGame.getPacmanCurrentNodeIndex(),simulatedGame.getGhostCurrentNodeIndex(ghost), measureMethod));
+//                else 
+//                listGhostMove.put(ghost, simulatedGame.getGhostLastMoveMade(ghost));
+        
+            
             // get current EdibleTime
             for (GHOST ghost : GHOST.values()) {
                 int time = simulatedGame.getGhostEdibleTime(ghost);
@@ -368,17 +415,21 @@ public class MCTSNode {
             // check was ghost eatten
             for (GHOST ghost : GHOST.values()) {
                 if (simulatedGame.wasGhostEaten(ghost)) {
-                    rewardGhost += (currentEdibleGhost.get(ghost) * 1.0) / totalEdibleTime;
+                    rewardGhost += (currentEdibleGhost.get(ghost));
                 }
             }
-
+            
+            
             move++;
 
         }
 
         //set reward reward
+        // check if the pacman was blocked all of avalable way
         if (!simulatedGame.wasPacManEaten()) {
+
             rewardX[0] = 1;
+
         } else {
 
             //       System.out.println("DIE PLAYOUT " + this.nodeIndex );
@@ -395,6 +446,8 @@ public class MCTSNode {
 
         rewardX[1] = (1.0 * (initialPill - currentPill) / initialPill);
         rewardX[2] += rewardGhost;
+        
+        rewardX[2] = (rewardX[2]  * 1.0) / totalEdibleTime;
 
         return rewardX;
         //debug("reward PlayOut :" +simulatedGame.getScore()+" - "+ this.reward  );
@@ -404,60 +457,69 @@ public class MCTSNode {
 
         Game simulatedGame = this.game.copy();
         int nodeTaget = currentBestChild.nodeIndex;
-        
+
         int totalEdibleTime = 0;
 
         for (GHOST ghost : GHOST.values()) {
             totalEdibleTime += originEdibleGhost.get(ghost);
         }
-        
+
         double rewardGhost = 0;
 
-        EnumMap<GHOST, Integer> currentEdibleGhost = new EnumMap<>(GHOST.class);
-
-
+         
         int currentPacManNode = simulatedGame.getPacmanCurrentNodeIndex(); // pacman should stay at currentNode;
 
         //   debug("TREE PHASE FROM " + this.nodeIndex + " (check "+ currentPacManNode +") + to " + nodeTaget +" by move " +currentBestChild.moveToReach);
         MOVE nextMove = currentBestChild.moveToReach;
 
         while (!simulatedGame.wasPacManEaten() && currentPacManNode != nodeTaget) {
-
-             // get current EdibleTime
+        EnumMap<GHOST, Integer> currentEdibleGhost = new EnumMap<>(GHOST.class);;
+            // get current EdibleTime
             for (GHOST ghost : GHOST.values()) {
                 int time = simulatedGame.getGhostEdibleTime(ghost);
                 time = Integer.max(0, time);
                 currentEdibleGhost.put(ghost, time);
 
             }
-            
+          
             SimulateGhostMove ghostsMove = new SimulateGhostMove();
             EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-            listGhostMove = ghostsMove.getMove(simulatedGame);
+            
+            // STATERGY MOVES
+             //  listGhostMove = ghostsMove.getMove(simulatedGame.copy());
+            
+            // RANDOM MOVES
+                listGhostMove = GhostGetRandomMove (simulatedGame);
+            
+            
+                     
+    // DANGER MOVES
+
+//            for (GHOST ghost : GHOST.values()) 
+//                if (simulatedGame.doesGhostRequireAction(ghost))
+//                listGhostMove.put(ghost, simulatedGame.getNextMoveTowardsTarget(simulatedGame.getPacmanCurrentNodeIndex(),simulatedGame.getGhostCurrentNodeIndex(ghost), measureMethod));
+//                else 
+//                listGhostMove.put(ghost, simulatedGame.getGhostLastMoveMade(ghost));
+            
+            
             simulatedGame.advanceGame(nextMove, listGhostMove);
 
-//            EnumMap<GHOST, MOVE> listDangerGhostMove = new EnumMap<>(GHOST.class);
-//            for (GHOST ghost : GHOST.values()) {
-//                listDangerGhostMove.put(ghost, this.game.getNextMoveTowardsTarget(this.game.getPacmanCurrentNodeIndex(), this.game.getGhostCurrentNodeIndex(ghost), measureMethod));
-//            }
-//            simulatedGame.advanceGame(nextMove, listDangerGhostMove);
-
             currentPacManNode = simulatedGame.getPacmanCurrentNodeIndex();
-            
+
             // check was ghost eatten
             for (GHOST ghost : GHOST.values()) {
                 if (simulatedGame.wasGhostEaten(ghost)) {
-                    rewardGhost += (currentEdibleGhost.get(ghost) * 1.0) / totalEdibleTime;
+                    rewardGhost += (currentEdibleGhost.get(ghost));
                 }
             }
-
+            if(totalEdibleTime-0> esp && simulatedGame.wasPowerPillEaten()) break;
         }
-        
-        if (rewardGhost>0) {
+
+        if (rewardGhost > 0) {
             currentBestChild.rewardPlayout[2] = rewardGhost;
             currentBestChild.hasJustEattenGhost = true;
         }
-        
+
         int currentPill = simulatedGame.getNumberOfActivePills();
 
         currentBestChild.isEndNode = (currentPill > initialPill);
@@ -506,8 +568,8 @@ public class MCTSNode {
     }
 
     public static void runMCTS(MCTSNode root, int originPill, EnumMap<GHOST, Integer> originEdibleGhost) {
-         
-        if (root.isLeaf() || root.hasJustEattenGhost ) {
+
+        if (root.isLeaf() || root.hasJustEattenGhost) {
 
             root.rewardPlayout = root.playOutPhase(originPill, originEdibleGhost); // roi sao nua?????
 
@@ -546,7 +608,7 @@ public class MCTSNode {
                         + Math.sqrt(Math.log(currentVisited) / (child.new_visitedCount));
 
                 //    System.out.println("UCT VALIE  : " + child.nodeIndex + " Mi  "  +child.maxViValue[MCTSNode.currentTactic] + "  Vi : "  + UCTValue[MCTSNode.currentTactic] + " parrent visited  " + currentVisited);
-                if (UCTValue[MCTSNode.currentTactic] > maxUCT || Math.abs(UCTValue[MCTSNode.currentTactic] - maxUCT) <= 0.000001) {
+                if (UCTValue[MCTSNode.currentTactic] > maxUCT || Math.abs(UCTValue[MCTSNode.currentTactic] - maxUCT) < esp) {
                     maxUCT = UCTValue[MCTSNode.currentTactic];
                     currentBestChild = child;
                     //     System.out.println("CHANGE BY UCT");
@@ -583,12 +645,12 @@ public class MCTSNode {
             } else {
 
                 if (currentBestChild.isEndNode) {
-                //    System.out.println("COME TO END NODE");
-                    currentBestChild.rewardPlayout = new double []{1,1,1};
+                    //    System.out.println("COME TO END NODE");
+                    currentBestChild.rewardPlayout = new double[]{1, 1, 0};
                     currentBestChild.updatStats(currentBestChild.rewardPlayout);
                     currentBestChild.maxViValue[0] = 1;
                     currentBestChild.maxViValue[1] = 1;
-                    currentBestChild.maxViValue[2] = 1;
+                    currentBestChild.maxViValue[2] = 0;
                 } else {
                     runMCTS(currentBestChild, originPill, originEdibleGhost);
                 }
@@ -612,10 +674,13 @@ public class MCTSNode {
                     }
 
                 }
-                
-                if ( root.game.getNumberOfActivePills() == currentBestChild.game.getNumberOfActivePills() )
-                        currentBestChild.rewardPlayout[1]*=DECREASE_WASTEMOVE;
-                
+
+                if (root.game.getScore() == currentBestChild.game.getScore()) {
+                    if (MCTSNode.currentTactic != 0) {
+                        currentBestChild.rewardPlayout[MCTSNode.currentTactic] *= DECREASE_WASTEMOVE;
+                    }
+                }
+
                 root.updatStats(currentBestChild.rewardPlayout);
 
             }
@@ -696,7 +761,10 @@ public class MCTSNode {
         }
         nextMove = expectedMove;
         if (!safeMoveCheck(gameX, expectedMove, tagetNode)) {
-            nextMove = expectedMove.opposite();
+         //   for (MOVE move : gameX.getPossibleMoves(gameX.getPacmanCurrentNodeIndex())){
+          //  if (safeMoveCheck(gameX, move)) return move;
+          //  }
+          return nextMove.opposite();
         }
 
         return nextMove;
@@ -735,32 +803,64 @@ public class MCTSNode {
     // BFS with Expected Move
     static boolean safeMoveCheck(Game gameX, MOVE expectedMove, int nodeTaget) {
 
-        Game simulateGame = gameX;
+        Game simulateGame = gameX.copy();
         int currentLevel = gameX.getCurrentLevel();
         EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-        while (currentLevel == simulateGame.getCurrentLevel() && !simulateGame.wasPacManEaten() && simulateGame.getPacmanCurrentNodeIndex() != nodeTaget) {
+        while (currentLevel == gameX.getCurrentLevel() && !gameX.wasPacManEaten() && gameX.getPacmanCurrentNodeIndex() != nodeTaget) {
 
             for (GHOST ghost : GHOST.values()) {
-                MOVE move = simulateGame.getGhostLastMoveMade(ghost);
+                MOVE move = gameX.getGhostLastMoveMade(ghost);
                 if (move != null) {
                     listGhostMove.put(ghost, move);
                 }
             }
 
-            simulateGame.advanceGame(expectedMove, listGhostMove);
+            gameX.advanceGame(expectedMove, listGhostMove);
 
         }
+      
+        
 //         
 //        if(!simulateGame.wasPacManEaten() && simulateGame.getPacmanCurrentNodeIndex() == nodeTaget)
 //         simulateGame.advanceGame(expectedMove, listGhostMove);
-
-        if (simulateGame.getPacmanCurrentNodeIndex() == nodeTaget || currentLevel != simulateGame.getCurrentLevel()) {
+        
+        if (!gameX.wasPacManEaten() && (gameX.getPacmanCurrentNodeIndex() == nodeTaget || currentLevel != gameX.getCurrentLevel())) {
             return true;
         }
 
         return false;
     }
 
+    
+     static boolean safeMoveCheck(Game gameX, MOVE expectedMove) {
+
+   Game simulateGame = gameX.copy();
+        int currentLevel = gameX.getCurrentLevel();
+        EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
+        while (currentLevel == gameX.getCurrentLevel() && !gameX.wasPacManEaten() && gameX.isJunction(gameX.getPacmanCurrentNodeIndex()) ) {
+
+            for (GHOST ghost : GHOST.values()) {
+                MOVE move = gameX.getGhostLastMoveMade(ghost);
+                if (move != null) {
+                    listGhostMove.put(ghost, move);
+                }
+            }
+
+            gameX.advanceGame(expectedMove, listGhostMove);
+
+        }
+      
+        
+//         
+//        if(!simulateGame.wasPacManEaten() && simulateGame.getPacmanCurrentNodeIndex() == nodeTaget)
+//         simulateGame.advanceGame(expectedMove, listGhostMove);
+        
+        if (!gameX.wasPacManEaten() && (gameX.isJunction(gameX.getPacmanCurrentNodeIndex()) || currentLevel != gameX.getCurrentLevel())) {
+            return true;
+        }
+
+        return false;
+    }
     public static void printLeaf(MCTSNode currentNode) {
 
         if (currentNode.isLeaf()) {
@@ -771,4 +871,5 @@ public class MCTSNode {
             }
         }
     }
+
 }

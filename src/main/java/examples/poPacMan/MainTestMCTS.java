@@ -39,7 +39,7 @@ public class MainTestMCTS {
         extractForm.updateGameInformation(gameX);
         extractForm.randomPosition();
         
-       
+         
        
     }
 

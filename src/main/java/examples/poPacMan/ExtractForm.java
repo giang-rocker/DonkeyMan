@@ -74,6 +74,7 @@ public class ExtractForm extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Extract Infomation");
         setBackground(new java.awt.Color(51, 51, 51));
+        setPreferredSize(new java.awt.Dimension(500, 600));
 
         btnRandomPosition.setText("Random");
         btnRandomPosition.addActionListener(new java.awt.event.ActionListener() {

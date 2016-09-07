@@ -11,7 +11,9 @@ public class Main {
     public static void main(String[] args) {
 
         Executor executor = new Executor(true, true);
-
-        executor.runGameTimed(new MyPacMan(), new POCommGhosts(50), true);
+        MyPacMan X = new MyPacMan();
+        
+        executor.runGameTimed(X, new POCommGhosts(50), true);
+      
     }
 }

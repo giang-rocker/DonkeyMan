@@ -5,7 +5,7 @@
  */
 package entrants.pacman.DonkeyMan;
 
-import examples.commGhosts.POCommGhosts;
+
 import java.util.EnumMap;
 import pacman.Executor;
 import pacman.controllers.Controller;

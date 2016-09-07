@@ -130,7 +130,7 @@ class POCommGhost {
                 return possibleMoves[rnd.nextInt(possibleMoves.length)];
             }
         }
-        return null;
+        return MOVE.NEUTRAL;
     }
 
     //This helper function checks if Ms Pac-Man is close to an available power pill

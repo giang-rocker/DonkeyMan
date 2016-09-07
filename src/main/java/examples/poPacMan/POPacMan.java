@@ -162,25 +162,24 @@ public class POPacMan extends PacmanController {
         // DEBUG
         
         if (game.wasPacManEaten())
-            System.out.println("\033[31mDIEEE");
-        
-        
+            root.print(root);
         
         if (root == null || game.wasPacManEaten() || gameX.isJunction(currentPacMan) || MCTSNode.isConner(gameX, currentPacMan, currentMove)) {
 
             boolean isSafe = false;
             isCreateMCTS = true;
             
-//           if (root!=null)
-//            root.select();
-//            if ( !game.wasPacManEaten() && root!=null && root.listChild!=null && root.listChild[root.selectedChild].listChild != null && root.listChild[root.selectedChild].childNodeIndex.length > 1 && (game.getTimeOfLastGlobalReversal() != (game.getCurrentLevelTime() - 1))) {
-//                 
-//                 
-//                root = root.listChild[root.selectedChild];
-//                root.parentNode = null;
-//            //    root.createEntireTree(root, 0,true);
-//              
-//            } else 
+           
+            
+            if ( !game.wasPacManEaten() && root!=null && root.listChild!=null && root.listChild[root.selectedChild].listChild != null && root.listChild[root.selectedChild].childNodeIndex.length > 1 && (game.getTimeOfLastGlobalReversal() != (game.getCurrentLevelTime() - 1))) {
+                 root.select();
+                 
+                root = root.listChild[root.selectedChild];
+                root.parentNode = null;
+            //    root.createEntireTree(root, 0,true);
+                 root.setGame(gameX);
+             
+            } else 
             {
                
                 root = new MCTSNode();
