@@ -49,9 +49,7 @@ public class MultiTest {
                     currentLevel = gameX.getCurrentLevel();
                 }
 
-                pacManController.terminate();
-              
-
+           //     pacManController.terminate();
             }
             System.out.println("");
             double endTime = System.currentTimeMillis();

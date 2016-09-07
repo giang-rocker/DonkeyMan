@@ -53,8 +53,7 @@ public class MyPacMan extends PacmanController {
         // set new maze
         if (doseReachNewMaze) {
             lastStage = new Game(0, currentMazeIndex);
-            System.out.println("new level");
-        }
+         }
 
         //synconize
         // ghost Position
