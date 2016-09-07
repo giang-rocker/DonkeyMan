@@ -745,8 +745,9 @@ public class MCTSNode {
             }
             //      System.out.println("NOT SAFE");
         } else {
-            for (MCTSNode child : this.listChild) {
-                if (child.new_visitedCount > MIN_VISITED) {
+            //if (gameX.isJunction(gameX.getPacmanCurrentNodeIndex())) System.out.println("JUNTION");
+             for (MCTSNode child : this.listChild) {
+                 if (child.new_visitedCount > MIN_VISITED) {
 
                     if (child.maxViValue[MCTSNode.currentTactic] > max || (Math.abs(child.maxViValue[MCTSNode.currentTactic] - max) < esp && child.moveToReach == gameX.getPacmanLastMoveMade())) {
                         max = child.maxViValue[MCTSNode.currentTactic];
@@ -754,12 +755,14 @@ public class MCTSNode {
                         expectedMove = child.moveToReach;
                         this.bestChild = child;
                     }
-
+         //           System.out.println(" MOVE " + child.moveToReach + " value " + child.maxViValue[MCTSNode.currentTactic]);
                 }
             }
             //     System.out.println("SAFE");
         }
-        nextMove = expectedMove;
+         nextMove = expectedMove;
+      // System.out.println("SELECT " + nextMove);
+        
         if (!safeMoveCheck(gameX, expectedMove, tagetNode)) {
          //   for (MOVE move : gameX.getPossibleMoves(gameX.getPacmanCurrentNodeIndex())){
           //  if (safeMoveCheck(gameX, move)) return move;

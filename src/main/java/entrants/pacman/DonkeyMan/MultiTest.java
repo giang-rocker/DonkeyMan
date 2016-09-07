@@ -6,6 +6,11 @@
 package entrants.pacman.DonkeyMan;
 
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumMap;
 import pacman.Executor;
 import pacman.controllers.Controller;
@@ -22,7 +27,22 @@ import pacman.game.Game;
  */
 public class MultiTest {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException  {
+        
+        File log = new File ("log1.txt");
+        
+        String header="Game,Level,Score,TimeStep,TimeMinute\n";
+        FileWriter fileWriter = new FileWriter(log, true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        
+        // write describle
+        
+        bufferedWriter.write(header);
+            bufferedWriter.write("No simulate last stage,,,,\n");
+    
+       
+             bufferedWriter.close();
+             fileWriter.close();
         Game gameX = new Game(0);
          Executor executor = new Executor(true, true);
 
@@ -31,7 +51,8 @@ public class MultiTest {
         int numOfGame = 100;
 
         for (int i = 0; i < numOfGame; i++) {
-
+          fileWriter = new FileWriter(log, true);
+        bufferedWriter = new BufferedWriter(fileWriter);
             System.out.print("Running " + (i + 1) + "/" + numOfGame);
 
             double startTime = System.currentTimeMillis();
@@ -53,14 +74,21 @@ public class MultiTest {
             }
             System.out.println("");
             double endTime = System.currentTimeMillis();
+            
+          String result = ( Integer.toString(i)+","+Integer.toString(gameX.getCurrentLevel()+1)+","+Integer.toString(gameX.getScore())+","+Integer.toString(gameX.getCurrentLevelTime())+","+Double.toString(((endTime - startTime) / 1000) / 60)+"\n");
+            bufferedWriter.write(result);
             System.out.println("Game " + (i+1) + " is finished at " + (gameX.getCurrentLevel()+1) + " level(s) ;"
+                     + " Score : " + gameX.getScore()
                     + gameX.getTotalTime() + " time step(s);"
-                    + " Score : " + gameX.getScore()
-                    + " Time : " + (((endTime - startTime) / 1000) / 60) + " minutes "
+                   + " Time : " + (((endTime - startTime) / 1000) / 60) + " minutes "
             );
-
+            
+          
+            bufferedWriter.close();
+            fileWriter.close();
             gameX = new Game(0);
             move = 0;
         }
+       
     }
 }

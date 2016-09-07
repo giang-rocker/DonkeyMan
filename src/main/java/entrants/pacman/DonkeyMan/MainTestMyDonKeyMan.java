@@ -21,6 +21,8 @@ public class MainTestMyDonKeyMan {
         MyPacMan X = new MyPacMan();
         
         executor.runGameTimed(X, new POCommGhosts(50), true);
+        
+        System.out.println((X.simmulateTime*1.0)/X.moves);
        
     }
   

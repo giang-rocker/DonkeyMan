@@ -30,7 +30,7 @@
   <configuration>
     <archive>
       <manifest>
-        <mainClass>Main</mainClass>
+        <mainClass>entrants.pacman.DonkeyMan.MultiTest</mainClass>
       </manifest>
     </archive>
     <descriptorRefs>
