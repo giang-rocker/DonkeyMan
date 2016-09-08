@@ -130,7 +130,7 @@ public class MCTSNode {
     // init with game
     public void init(Game _game) {
         this.parentNode = null;
-        this.game = _game.copy();
+        this.game = _game.copy(false);
         this.nodeIndex = this.game.getPacmanCurrentNodeIndex();
         lenghtToParent = 0;
 
@@ -147,7 +147,7 @@ public class MCTSNode {
     }
 
     public void setGame(Game _game) {
-        this.game = _game.copy();
+        this.game = _game.copy(false);
     }
 
     boolean inBound(int len) {
@@ -361,7 +361,7 @@ public class MCTSNode {
         double rewardX[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
         rewardX[2] = this.rewardPlayout[2];
 
-        //Game simulatedGame = this.game.copy();
+        //Game simulatedGame = this.game.copy(false);
         Game simulatedGame = this.game;
 
         int oldScore = simulatedGame.getScore();
@@ -455,7 +455,7 @@ public class MCTSNode {
 
     boolean treePhase(int initialPill, MCTSNode currentBestChild, EnumMap<GHOST, Integer> originEdibleGhost) {
 
-        Game simulatedGame = this.game.copy();
+        Game simulatedGame = this.game.copy(false);
         int nodeTaget = currentBestChild.nodeIndex;
 
         int totalEdibleTime = 0;
@@ -486,7 +486,7 @@ public class MCTSNode {
             EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
             
             // STATERGY MOVES
-             //  listGhostMove = ghostsMove.getMove(simulatedGame.copy());
+             //  listGhostMove = ghostsMove.getMove(simulatedGame.copy(false));
             
             // RANDOM MOVES
                 listGhostMove = GhostGetRandomMove (simulatedGame);
@@ -527,7 +527,7 @@ public class MCTSNode {
         boolean isSurvival = (currentPacManNode == nodeTaget) || currentBestChild.isEndNode;
 
         if (isSurvival) {
-            currentBestChild.game = simulatedGame.copy();
+            currentBestChild.game = simulatedGame.copy(false);
         } else {
 
             //        System.out.println("DIE TREE PHASE FROM " + this.nodeIndex + " TO  "+ nodeTaget +" by MOVE " + currentBestChild.moveToReach );
@@ -806,7 +806,7 @@ public class MCTSNode {
     // BFS with Expected Move
     static boolean safeMoveCheck(Game gameX, MOVE expectedMove, int nodeTaget) {
 
-        Game simulateGame = gameX.copy();
+        Game simulateGame = gameX.copy(false);
         int currentLevel = gameX.getCurrentLevel();
         EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
         while (currentLevel == gameX.getCurrentLevel() && !gameX.wasPacManEaten() && gameX.getPacmanCurrentNodeIndex() != nodeTaget) {
@@ -837,7 +837,7 @@ public class MCTSNode {
     
      static boolean safeMoveCheck(Game gameX, MOVE expectedMove) {
 
-   Game simulateGame = gameX.copy();
+   Game simulateGame = gameX.copy(false);
         int currentLevel = gameX.getCurrentLevel();
         EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
         while (currentLevel == gameX.getCurrentLevel() && !gameX.wasPacManEaten() && gameX.isJunction(gameX.getPacmanCurrentNodeIndex()) ) {

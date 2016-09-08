@@ -1,53 +1,23 @@
 package examples.poPacMan;
 
-import java.awt.Color;
 import pacman.controllers.PacmanController;
 import pacman.game.Game;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import pacman.game.Constants;
 
 import static pacman.game.Constants.*;
-import pacman.game.info.GameInfo;
-import pacman.game.internal.Node;
 
 /**
  * Created by Piers on 15/02/2016.
  */
 public class POPacMan extends PacmanController {
-
     private static final int MIN_DISTANCE = 20;
     private Random random = new Random();
-    ExtractForm extractForm;
-    Game myGame;
-    int currentLive = -1;
 
-    boolean isExtractForm = false;
-
-    public POPacMan() {
-        if (isExtractForm) {
-            extractFormInit();
-        }
-
-    }
-
-    public void extractFormInit() {
-        extractForm = new ExtractForm();
-        extractForm.setSize(113 * 4 + 50, 130 * 4 + 50);
-        extractForm.setVisible(true);
-        extractForm.setBackground(Color.black);
-        extractForm.setForeground(Color.white);
-    }
-
-    /*
     @Override
     public MOVE getMove(Game game, long timeDue) {
-        
+
         // Should always be possible as we are PacMan
         int current = game.getPacmanCurrentNodeIndex();
 
@@ -125,92 +95,5 @@ public class POPacMan extends PacmanController {
         }
         // Must be possible to turn around
         return game.getPacmanLastMoveMade().opposite();
-        
-        
     }
-     */
-    @Override
-    public MOVE getMove(Game game, long timeDue) {
-
-        return simulateMove(game);
-
-    }
-    MCTSNode root;
-    boolean firstTime = true;
-
-    public MOVE simulateMove(Game game) {
-
-        int currentPacMan = game.getPacmanCurrentNodeIndex();
-        MOVE currentMove = game.getPacmanLastMoveMade();
-
-        double startTime = System.nanoTime();
-
-        // clone game
-        String strGameState = game.getGameState();
-        Game gameX = new Game(0);
-        gameX.setGameState(strGameState);
-
-        if (isExtractForm) {
-            extractForm.game = gameX;
-            extractForm.updateGameInformation(game);
-        }
-
-         
-        boolean isCreateMCTS;
-        isCreateMCTS = false;
-        
-        // DEBUG
-        
-        if (game.wasPacManEaten())
-            root.print(root);
-        
-        if (root == null || game.wasPacManEaten() || gameX.isJunction(currentPacMan) || MCTSNode.isConner(gameX, currentPacMan, currentMove)) {
-
-            boolean isSafe = false;
-            isCreateMCTS = true;
-            
-           
-            
-            if ( !game.wasPacManEaten() && root!=null && root.listChild!=null && root.listChild[root.selectedChild].listChild != null && root.listChild[root.selectedChild].childNodeIndex.length > 1 && (game.getTimeOfLastGlobalReversal() != (game.getCurrentLevelTime() - 1))) {
-                 root.select();
-                 
-                root = root.listChild[root.selectedChild];
-                root.parentNode = null;
-            //    root.createEntireTree(root, 0,true);
-                 root.setGame(gameX);
-             
-            } else 
-            {
-               
-                root = new MCTSNode();
-                root.parentNode = null;
-                root.setGame(gameX);
-                root.init();
-                root.createEntireTree(root, 0);
-
-               
-            }
-            
-            for (int i = 0; i < 80; i++) {
-                    root.setGame(gameX);
-                    MCTSNode.runMCTS(root, root.game.getNumberOfActivePills());
-                }
-        }
-        
-
-        MOVE nextMove = root.selectBestMove(gameX, isCreateMCTS);
-        gameX.setGameState(strGameState);
-
-//         double endTime =  System.nanoTime();
-//         double thinkingTime =   (endTime-startTime)/1000000.0;
-//         if (thinkingTime!=0){
-//        System.out.print("thinkingTime : " + thinkingTime);
-//         if (thinkingTime>39)
-//             System.out.println(" FAIL");
-//         else System.out.println("");
-//         }
-        return nextMove;
-
-    }
-
 }

@@ -1,5 +1,6 @@
 package entrants.pacman.DonkeyMan;
 
+import static java.lang.Integer.max;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Map;
@@ -11,7 +12,9 @@ import pacman.game.Constants;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
+import pacman.game.info.GameInfo;
 import pacman.game.internal.Ghost;
+import pacman.game.internal.POType;
 
 /*
  * This is the class you need to modify for your entry. In particular, you need to
@@ -36,6 +39,8 @@ public class MyPacMan extends PacmanController {
         simmulateTime = 0;
         moves = 0;
         lastStage = new Game(0);
+        lastStage.PO_TYPE = POType.RADIUS;
+           lastStage.SIGHT_LIMIT = 100000;
         doseReachNewMaze = false;
         currentMazeIndex = -1;
     }
@@ -55,7 +60,7 @@ public class MyPacMan extends PacmanController {
         // set new maze
         if (doseReachNewMaze) {
             lastStage = new Game(0, currentMazeIndex);
-        }
+         }
 
         //synconize
         // ghost Position
@@ -78,6 +83,7 @@ public class MyPacMan extends PacmanController {
                 }
             } else if ((ghostPosition == -1 && lastPosition == -1)) {
                 ghostPosition = R.nextInt(game.getCurrentMaze().graph.length);
+                isRandomPosition = true;
             }
           
             
@@ -85,8 +91,8 @@ public class MyPacMan extends PacmanController {
                 ghostPosition = game.getGhostInitialNodeIndex();
             }
 
-            int edibleTime  = game.getGhostEdibleTime(ghost);
-            
+            int edibleTime  = max (game.getGhostEdibleTime(ghost), lastStage.getGhostEdibleTime(ghost));
+
            // move
             MOVE ghostLastMove = game.getGhostLastMoveMade(ghost);
             MOVE ghostLastLastMove = lastStage.getGhostLastMoveMade(ghost);
@@ -133,8 +139,15 @@ public class MyPacMan extends PacmanController {
         sb.append(",");
 
         for (int i = 0; i < game.getNumberOfPowerPills(); i++) {
-            boolean isPowerPillAvailable = game.isPowerPillStillAvailable(i) == null ? false : game.isPowerPillStillAvailable(i);
-            boolean isPowerLastPillAvailable = lastStage.isPowerPillStillAvailable(i) == null ? false : lastStage.isPowerPillStillAvailable(i);
+            Boolean isPowerPillAvailable = game.isPowerPillStillAvailable(i) ;
+                    
+            if(isNull(isPowerPillAvailable))
+                  isPowerPillAvailable=  false;
+            
+            Boolean isPowerLastPillAvailable = lastStage.isPowerPillStillAvailable(i);
+            
+            if (isNull(isPowerLastPillAvailable))
+               isPowerLastPillAvailable= false ;
 
             if (isPowerPillAvailable || (!isPowerPillAvailable && isPowerLastPillAvailable)) {
                 sb.append("1");
@@ -164,6 +177,9 @@ public class MyPacMan extends PacmanController {
 
     @Override
     public MOVE getMove(Game game, long timeDue) {
+ {
+        
+        
         // check new maze reach
         if (currentMazeIndex != game.getMazeIndex()) {
             currentMazeIndex = game.getMazeIndex();
@@ -172,15 +188,18 @@ public class MyPacMan extends PacmanController {
             doseReachNewMaze = false;
         }
 
-        String megGameStage = mergeGameState(game);
+        String megGameStageX ="";
+        megGameStageX = mergeGameState(game);
 
         Game gameX = new Game(0);
-
-        gameX.setGameState(megGameStage);
-        lastStage.setGameState(megGameStage);
-
-        gameX.setGameState(megGameStage);
-
+    
+          
+        gameX.setGameState(megGameStageX);
+        gameX.updateGame();
+        
+        lastStage.setGameState(megGameStageX);
+        lastStage.updateGame();
+    
         if (gameX.wasPowerPillEaten()) {
             MCTSNode.hasJustChangeMove = false;
         }
@@ -201,25 +220,32 @@ public class MyPacMan extends PacmanController {
         int numActivePill = gameX.getNumberOfActivePills();
 
         // get timeOfEidibleGhost
+            
         int ghostTimeInit = 0;
         int numOfGhostInRange = 0;
         boolean isGhostInRange = false;
         EnumMap<GHOST, Integer> listEdibleGhost = new EnumMap<>(GHOST.class);
+        
+         
          for (GHOST ghost : GHOST.values()) {
-            
+               
             int time = gameX.getGhostEdibleTime(ghost);
+             
             time = Integer.max(0, time);
-            double len;
+            
+             double len;
             if (time != 0) {
-                len = gameX.getDistance(gameX.getPacmanCurrentNodeIndex(), gameX.getGhostCurrentNodeIndex(ghost), Constants.DM.PATH);
-                if (len < time) {
-                    isGhostInRange = true;
-                }
+               
+                     isGhostInRange = true;
+              
+           //     numOfGhostInRange++;
             }
 
             listEdibleGhost.put(ghost, time);
 
         }
+         
+    //     System.out.println("\nEldible Ghost " + numOfGhostInRange);
       
         // RUN MCTS
         while (System.currentTimeMillis() < (timeDue - 2)) {
@@ -239,19 +265,20 @@ public class MyPacMan extends PacmanController {
 
         MOVE nextMove = root.selectBestMove(gameX);
 
-   //     SimulateGhostMove ghostsMove = new SimulateGhostMove();
-    //    EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
+       SimulateGhostMove ghostsMove = new SimulateGhostMove();
+        EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
 
-        // STATERGY MOVES
-    //    listGhostMove = ghostsMove.getMove(lastStage.copy());
+        // STATERGY MOVESopy
+        listGhostMove = ghostsMove.getMove(lastStage);
 
-     //   lastStage.advanceGame(nextMove, listGhostMove);
+        lastStage.advanceGame(nextMove, listGhostMove);
 
+     //   System.out.println(root.new_visitedCount);
        //System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
         //  moves++;
         //  simmulateTime+=root.new_visitedCount;
            
         return nextMove;
-
+        }
     }
 }

@@ -6,6 +6,7 @@
 package entrants.pacman.DonkeyMan;
 
 
+import examples.poPacMan.POPacMan;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -29,7 +30,7 @@ public class MultiTest {
 
     public static void main(String[] args) throws IOException  {
         
-        File log = new File ("log1.txt");
+        File log = new File ("log4.txt");
         
         String header="Game,Level,Score,TimeStep,TimeMinute\n";
         FileWriter fileWriter = new FileWriter(log, true);
@@ -38,7 +39,7 @@ public class MultiTest {
         // write describle
         
         bufferedWriter.write(header);
-            bufferedWriter.write("No simulate last stage,,,,\n");
+            bufferedWriter.write("NEW EDIT 3 DONKEYMAN,,,,\n");
     
        
              bufferedWriter.close();
@@ -48,7 +49,7 @@ public class MultiTest {
 
         int move = 0;
         int DELAY = 40;
-        int numOfGame = 100;
+        int numOfGame = 50;
 
         for (int i = 0; i < numOfGame; i++) {
           fileWriter = new FileWriter(log, true);
@@ -75,10 +76,10 @@ public class MultiTest {
             System.out.println("");
             double endTime = System.currentTimeMillis();
             
-          String result = ( Integer.toString(i)+","+Integer.toString(gameX.getCurrentLevel()+1)+","+Integer.toString(gameX.getScore())+","+Integer.toString(gameX.getCurrentLevelTime())+","+Double.toString(((endTime - startTime) / 1000) / 60)+"\n");
+          String result = ( Integer.toString(i)+","+Integer.toString(gameX.getCurrentLevel()+1)+","+Integer.toString(gameX.getScore())+","+Integer.toString(gameX.getTotalTime())+","+Double.toString(((endTime - startTime) / 1000) / 60)+"\n");
             bufferedWriter.write(result);
             System.out.println("Game " + (i+1) + " is finished at " + (gameX.getCurrentLevel()+1) + " level(s) ;"
-                     + " Score : " + gameX.getScore()
+                     + " Score : " + gameX.getScore() + " "
                     + gameX.getTotalTime() + " time step(s);"
                    + " Time : " + (((endTime - startTime) / 1000) / 60) + " minutes "
             );
