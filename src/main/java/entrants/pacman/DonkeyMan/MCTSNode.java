@@ -566,7 +566,7 @@ public class MCTSNode {
         }
 
     }
-
+    
     public static void runMCTS(MCTSNode root, int originPill, EnumMap<GHOST, Integer> originEdibleGhost) {
 
         if (root.isLeaf() || root.hasJustEattenGhost) {
@@ -724,7 +724,7 @@ public class MCTSNode {
    }
      */
     public MOVE selectBestMove(Game gameX) {
-
+        Random R = new Random();
         double max = -1;
         MOVE nextMove = MOVE.NEUTRAL;
         MOVE expectedMove = MOVE.NEUTRAL;
@@ -749,7 +749,7 @@ public class MCTSNode {
              for (MCTSNode child : this.listChild) {
                  if (child.new_visitedCount > MIN_VISITED) {
 
-                    if (child.maxViValue[MCTSNode.currentTactic] > max || (Math.abs(child.maxViValue[MCTSNode.currentTactic] - max) < esp && child.moveToReach == gameX.getPacmanLastMoveMade())) {
+                    if (child.maxViValue[MCTSNode.currentTactic] > max || (Math.abs(child.maxViValue[MCTSNode.currentTactic] - max) < esp && R.nextInt(100) >50)) {
                         max = child.maxViValue[MCTSNode.currentTactic];
                         tagetNode = child.nodeIndex;
                         expectedMove = child.moveToReach;

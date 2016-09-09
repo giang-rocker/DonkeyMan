@@ -1,7 +1,9 @@
 package entrants.pacman.DonkeyMan;
 
 import static java.lang.Integer.max;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import static java.util.Objects.isNull;
@@ -9,7 +11,10 @@ import java.util.Random;
 import jdk.nashorn.internal.runtime.regexp.joni.EncodingHelper;
 import pacman.controllers.PacmanController;
 import pacman.game.Constants;
+import static pacman.game.Constants.EDIBLE_TIME;
+import static pacman.game.Constants.EDIBLE_TIME_REDUCTION;
 import pacman.game.Constants.GHOST;
+import static pacman.game.Constants.LEVEL_RESET_REDUCTION;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 import pacman.game.info.GameInfo;
@@ -34,32 +39,28 @@ public class MyPacMan extends PacmanController {
     int lastIndex = 0;
     public int simmulateTime = 0;
     public int moves = 0;
-
+   // ExtractorForm extractor;
     public MyPacMan() {
         simmulateTime = 0;
         moves = 0;
         lastStage = new Game(0);
-        lastStage.PO_TYPE = POType.RADIUS;
-           lastStage.SIGHT_LIMIT = 100000;
-        doseReachNewMaze = false;
+           doseReachNewMaze = false;
         currentMazeIndex = -1;
+    //    extractor =  new ExtractorForm(lastStage);
+    //    extractor.setVisible(true);
     }
 
     int Maxlen = 0;
-
-    boolean convertTrueFalse(boolean f) {
-        if (!isNull(f)) {
-            return f;
-        }
-
-        return false;
-    }
-
+    
+    boolean listPillRecord [];
+    
     String mergeGameState(Game game) {
         Random R = new Random();
         // set new maze
         if (doseReachNewMaze) {
             lastStage = new Game(0, currentMazeIndex);
+            listPillRecord = new boolean[lastStage.getNumberOfPills()];
+            Arrays.fill(listPillRecord, false);
          }
 
         //synconize
@@ -90,8 +91,18 @@ public class MyPacMan extends PacmanController {
             if (game.wasPacManEaten() || game.wasGhostEaten(ghost)) {
                 ghostPosition = game.getGhostInitialNodeIndex();
             }
-
-            int edibleTime  = max (game.getGhostEdibleTime(ghost), lastStage.getGhostEdibleTime(ghost));
+            
+            int edibleTime = game.getGhostEdibleTime(ghost);
+            int lastEdibleTime = lastStage.getGhostEdibleTime(ghost);
+            
+            if ( edibleTime< 0 && lastEdibleTime>0  ) edibleTime = lastEdibleTime;
+            
+            if (game.wasPowerPillEaten()) edibleTime = 50;
+            
+            
+           
+            
+ 
 
            // move
             MOVE ghostLastMove = game.getGhostLastMoveMade(ghost);
@@ -116,25 +127,20 @@ public class MyPacMan extends PacmanController {
             //   System.out.println(ghostLastMove +"FF");
             sb.append(ghostPosition + "," + edibleTime + "," + game.getGhostLairTime(ghost) + "," + ghostLastMove + ",");
         }
-
-        for (int i = 0; i < game.getNumberOfPills(); i++) {
-
-            Boolean isPillAvailable = game.isPillStillAvailable(i);
-            if (isNull(isPillAvailable)) 
-                isPillAvailable = false;
-            
-
-            Boolean isLastPillAvailable = lastStage.isPillStillAvailable(i);
-            if (isNull(isLastPillAvailable)) 
-                isLastPillAvailable = false;
-            
-
-            if (isPillAvailable || (!isPillAvailable && isLastPillAvailable)) {
-                sb.append("1");
-            } else {
-                sb.append("0");
-            }
+         
+        int count = 0;
+        for (int i = 0; i < game.getActivePillsIndices().length; i++) {
+            int pillIndex = game.getPillIndex(game.getActivePillsIndices()[i]);
+             listPillRecord[pillIndex] = true;
+               
         }
+        
+        if ( lastStage.getPillIndex(lastStage.getPacmanCurrentNodeIndex()) != -1 ) 
+        listPillRecord[ lastStage.getPillIndex(lastStage.getPacmanCurrentNodeIndex()) ] = false;
+         
+        for (int i =0; i < listPillRecord.length; i ++)
+            if (listPillRecord[i]==true &&  lastStage.isPillStillAvailable(i)== true ) sb.append("1");
+            else sb.append("0");
 
         sb.append(",");
 
@@ -178,7 +184,7 @@ public class MyPacMan extends PacmanController {
     @Override
     public MOVE getMove(Game game, long timeDue) {
  {
-        
+      
         
         // check new maze reach
         if (currentMazeIndex != game.getMazeIndex()) {
@@ -196,6 +202,9 @@ public class MyPacMan extends PacmanController {
           
         gameX.setGameState(megGameStageX);
         gameX.updateGame();
+        
+       //   extractor.game = lastStage;
+       //   extractor.listPill = listPillRecord;
         
         lastStage.setGameState(megGameStageX);
         lastStage.updateGame();
@@ -238,7 +247,7 @@ public class MyPacMan extends PacmanController {
                
                      isGhostInRange = true;
               
-           //     numOfGhostInRange++;
+                numOfGhostInRange++;
             }
 
             listEdibleGhost.put(ghost, time);
@@ -256,7 +265,7 @@ public class MyPacMan extends PacmanController {
         // re-check tactic
         MCTSNode.currentTactic = 0;
         if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL) {
-            if (isGhostInRange && root.maxViValue[2] - 0 > 0.000001) {
+            if (isGhostInRange && root.maxViValue[2]-0.001 >0) {
                 MCTSNode.currentTactic = 2;
             } else if (root.maxViValue[1] - 0 > 0.000001) {
                 MCTSNode.currentTactic = 1;
@@ -273,8 +282,8 @@ public class MyPacMan extends PacmanController {
 
         lastStage.advanceGame(nextMove, listGhostMove);
 
-     //   System.out.println(root.new_visitedCount);
-       //System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
+    //    System.out.println(root.new_visitedCount + " " + lastStage.getActivePillsIndices().length );
+   //   System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
         //  moves++;
         //  simmulateTime+=root.new_visitedCount;
            
