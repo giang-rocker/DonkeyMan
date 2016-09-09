@@ -5,6 +5,7 @@ import pacman.game.Game;
 
 import java.util.ArrayList;
 import java.util.Random;
+import pacman.game.Constants;
 
 import static pacman.game.Constants.*;
 
@@ -17,6 +18,8 @@ public class POPacMan extends PacmanController {
 
     @Override
     public MOVE getMove(Game game, long timeDue) {
+         if (timeDue==-1) timeDue = System.currentTimeMillis() + Constants.DELAY;
+    
 
         // Should always be possible as we are PacMan
         int current = game.getPacmanCurrentNodeIndex();
