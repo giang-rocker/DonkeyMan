@@ -178,6 +178,7 @@ public class MyPacMan extends PacmanController {
     @Override
     public MOVE getMove(Game game, long timeDue) {
  {
+     if (timeDue==-1) timeDue = System.currentTimeMillis() + Constants.DELAY;
         
         
         // check new maze reach

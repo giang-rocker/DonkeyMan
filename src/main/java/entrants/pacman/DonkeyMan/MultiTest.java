@@ -5,7 +5,7 @@
  */
 package entrants.pacman.DonkeyMan;
 
-
+import examples.commGhosts.POCommGhosts;
 import examples.poPacMan.POPacMan;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,11 +16,11 @@ import java.util.EnumMap;
 import pacman.Executor;
 import pacman.controllers.Controller;
 import pacman.controllers.examples.po.POGhosts;
-import pacman.game.Constants;
 import static pacman.game.Constants.DELAY;
 import pacman.game.Constants.MOVE;
 
 import pacman.game.Game;
+import pacman.game.util.Stats;
 
 /**
  *
@@ -28,68 +28,63 @@ import pacman.game.Game;
  */
 public class MultiTest {
 
-    public static void main(String[] args) throws IOException  {
+    public static void main(String[] args) throws IOException {
+        System.out.println("START EXPERIEMNT POPACMAN");
+         
         
-        File log = new File ("log4.txt");
+        Executor executor = new Executor(true,true);
         
-        String header="Game,Level,Score,TimeStep,TimeMinute\n";
+       Stats stats[]= executor.runExperiment(new MyPacMan(), new POCommGhosts(50), 500," DONE ");
+        
+       for (int i =0; i < stats.length; i ++)
+            System.out.println(stats[i]);
+        
+        /*
+        
+        File log = new File("DonKeyManExperiment.txt");
+
+        String header = "Game,Score\n";
         FileWriter fileWriter = new FileWriter(log, true);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-        
+
         // write describle
-        
         bufferedWriter.write(header);
-            bufferedWriter.write("NEW EDIT 3 DONKEYMAN,,,,\n");
-    
-       
-             bufferedWriter.close();
-             fileWriter.close();
+         bufferedWriter.write("PLAYER,POPACMAN\n"); 
+      
+
+        bufferedWriter.close();
+        fileWriter.close();
         Game gameX = new Game(0);
-         Executor executor = new Executor(true, true);
+        Executor executor = new Executor(true, true);
 
         int move = 0;
         int DELAY = 40;
         int numOfGame = 50;
-
-        for (int i = 0; i < numOfGame; i++) {
-          fileWriter = new FileWriter(log, true);
+       
+        fileWriter = new FileWriter(log, true);
         bufferedWriter = new BufferedWriter(fileWriter);
-            System.out.print("Running " + (i + 1) + "/" + numOfGame);
-
-            double startTime = System.currentTimeMillis();
-            int currentLevel = -1;
-            while (!gameX.gameOver()) {
-                Controller<MOVE> pacManController = new MyPacMan();
-                SimulateGhostMove ghostController = new SimulateGhostMove(50);
-                
-                 gameX.advanceGame(pacManController.getMove(gameX.copy(), System.currentTimeMillis() + DELAY), ghostController.getMove(gameX.copy()));
-
-                move++;
-
-                if (currentLevel != gameX.getCurrentLevel()) {
-                    System.out.print(" " + gameX.getCurrentLevel());
-                    currentLevel = gameX.getCurrentLevel();
-                }
-
-           //     pacManController.terminate();
-            }
-            System.out.println("");
-            double endTime = System.currentTimeMillis();
+        for (int i = 0; i < numOfGame; i++) {
+            MyPacMan X  = new MyPacMan();
+            //Controller ghostController = ;
+            System.out.print("Running game " +(i+1) + "/" + numOfGame +" Score ");
+           
+            int currentScore = executor.runGame(X, new POCommGhosts(50), true,40);
             
-          String result = ( Integer.toString(i)+","+Integer.toString(gameX.getCurrentLevel()+1)+","+Integer.toString(gameX.getScore())+","+Integer.toString(gameX.getTotalTime())+","+Double.toString(((endTime - startTime) / 1000) / 60)+"\n");
-            bufferedWriter.write(result);
-            System.out.println("Game " + (i+1) + " is finished at " + (gameX.getCurrentLevel()+1) + " level(s) ;"
-                     + " Score : " + gameX.getScore() + " "
-                    + gameX.getTotalTime() + " time step(s);"
-                   + " Time : " + (((endTime - startTime) / 1000) / 60) + " minutes "
-            );
+            System.out.println(currentScore);
+            String info = (i + "," + currentScore + "\n");
             
+
+            bufferedWriter.write(info);
+            X.terminate();
           
             bufferedWriter.close();
             fileWriter.close();
             gameX = new Game(0);
-            move = 0;
+
         }
-       
+        */
+        System.out.println("END");
+
     }
+
 }
