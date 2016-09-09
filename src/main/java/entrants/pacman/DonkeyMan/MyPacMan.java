@@ -282,11 +282,15 @@ public class MyPacMan extends PacmanController {
 
         lastStage.advanceGame(nextMove, listGhostMove);
 
-    //    System.out.println(root.new_visitedCount + " " + lastStage.getActivePillsIndices().length );
+    //    System.out.println(root.new_visitedCount +"" );//" " + lastStage.getActivePillsIndices().length );
    //   System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
         //  moves++;
         //  simmulateTime+=root.new_visitedCount;
-           
+        
+        GameInfo X = new GameInfo(lastIndex);
+        Game XX = new Game(0);
+        XX.getGameFromInfo(X);
+        
         return nextMove;
         }
     }
