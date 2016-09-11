@@ -7,14 +7,9 @@ package entrants.pacman.DonkeyMan;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import static java.lang.Thread.sleep;
-import java.lang.reflect.Array;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import pacman.game.Constants.GHOST;
 import pacman.game.Game;
-import pacman.game.internal.Node;
- 
+
 
 /**
  *
@@ -25,22 +20,19 @@ public class ExtractorForm extends javax.swing.JFrame {
     /**
      * Creates new form ExtractorForm
      */
-    
-    Game game ;
-    int scale = 6;
-    int margin =50;
+    Game gameX;
+    int scale = 4;
+    int margin = 50;
     int defaultWidth = 108;
     int defaultHeight = 116;
-    int maze [][];
-    boolean listPill[];
-    public ExtractorForm(Game _game) {
+
+    public ExtractorForm() {
         initComponents();
-         
-        
-        this.game = _game.copy();
-         
-       this.setSize(margin*2 + defaultWidth*scale, margin*2 + defaultHeight*scale);
+
+        gameX = null;
+        this.setSize(margin * 2 + defaultWidth * scale, margin * 2 + defaultHeight * scale);
        
+
     }
 
     /**
@@ -70,70 +62,59 @@ public class ExtractorForm extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    
-   
-    
-    
-    public void paint (Graphics g) {
-        
-        g.setColor(Color.white);
-         
-        g.drawRect(1,1,margin*2 + defaultWidth*scale-2, margin*2 + defaultHeight*scale-2);
-        g.setColor(Color.black);
-         
-        g.fillRect(1,1,margin*2 + defaultWidth*scale-2, margin*2 + defaultHeight*scale-2);        
-        int count=0;
-        
+
+    public void paint(Graphics g) {
+        //  g.setColor(Color.black);
+
+        g.clearRect(1, 1, margin * 2 + defaultWidth * scale - 2, margin * 2 + defaultHeight * scale - 2);
+        int count = 0;
+        int X,Y;
         g.setColor(Color.red);
-        if (listPill!=null && listPill.length!=0)
-        for (int i =0; i < listPill.length ;i++){
-            if(!listPill[i]) continue;
-            int X = game.getNodeXCood(game.getPillIndices()[i]);
-            int Y = game.getNodeYCood(game.getPillIndices()[i]);
-        
-              g.fillRect(margin + X*scale+ 1*scale/2 , margin + Y*scale+ 1*scale/2, 1*scale/2, 1*scale/2);
-              
+        if (gameX != null) {
+
+            int listPillIndice[] = gameX.getActivePillsIndices();
+            //   System.out.println(gameX.getMazeIndex()+"XX");
+
+            for (int i = 0; i < listPillIndice.length; i++) {
+                int nodeIndex = listPillIndice[i];
+                 X = gameX.getNodeXCood(nodeIndex);
+                 Y = gameX.getNodeYCood(nodeIndex);
+
+                g.fillRect(margin + X * scale + 1 * scale / 2, margin + Y * scale + 1 * scale / 2, 1 * scale / 2, 1 * scale / 2);
+
+            }
+
+            g.setColor(Color.yellow);
+            //draw Pacman
+            int PacmanIndex = gameX.getPacmanCurrentNodeIndex();
+             X = gameX.getNodeXCood(PacmanIndex);
+             Y = gameX.getNodeYCood(PacmanIndex);
+            g.fillRect(margin + X * scale  - 16 * scale / 8, margin + Y * scale - 16 * scale / 8, 16 * scale/4  , 16 * scale/4 );
+            // end of draw Pacman
+            
+            g.setColor(Color.GREEN);
+            //drawGHOst
+            for (GHOST ghost : GHOST.values()) {
+            //draw Pacman
+            int ghostIndex = gameX.getGhostCurrentNodeIndex(ghost);
+            if (ghostIndex==-1) continue;
+            if (gameX.isGhostEdible(ghost)) g.setColor(Color.blue);
+             X = gameX.getNodeXCood(ghostIndex);
+             Y = gameX.getNodeYCood(ghostIndex);
+            g.fillRect(margin + X * scale  - 16 * scale / 8, margin + Y * scale - 16 * scale / 8, 16 * scale/4  , 16 * scale/4 );
+            // end of draw Pacman
+            
+            }
+            
         }
-             repaint();
-            validate();
+        revalidate();
+        repaint();
+
     }
-    
+
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ExtractorForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ExtractorForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ExtractorForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ExtractorForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                Game game = new Game(0,1);
-                new ExtractorForm(game).setVisible(true);
-            }
-        });
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables

@@ -20,10 +20,7 @@ public class MainTestMyDonKeyMan {
         Executor executor = new Executor(true, true);
         MyPacMan X = new MyPacMan();
         executor.runGameTimedRecorded(X, new POCommGhosts(50), true,"Record");
-        
-        System.out.println((X.simmulateTime*1.0)/X.moves);
-        executor.replayGame("Record", true);
-       
+     
     }
   
 }

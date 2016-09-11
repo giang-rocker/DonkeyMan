@@ -1,0 +1,6 @@
+MyPacman() Experiment Result
+Stats{Desc= DONE , average=6875.0, sum=68750.0, sumsq=6.661383E8, sd=4636.594176284523, n=10, min=1840.0, max=17870.0, stdErr=1466.2198182931356, ms=1175469}
+Stats{Desc= DONE  Ticks, average=1360.0, sum=13600.0, sumsq=2.1232448E7, sd=551.4070889803447, n=10, min=423.0, max=2354.0, stdErr=174.37023191410216, ms=1175469}
+
+
+MyPacman1() Experiment Result

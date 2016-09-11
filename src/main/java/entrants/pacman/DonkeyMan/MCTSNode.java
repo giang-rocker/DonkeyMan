@@ -9,6 +9,7 @@ import entrants.pacman.DonkeyMan.Junction.POSITION;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedList;
+import static java.util.Objects.isNull;
 import java.util.Queue;
 import java.util.Random;
 import pacman.game.Constants;
@@ -327,17 +328,20 @@ public class MCTSNode {
         EnumMap<GHOST, MOVE> myMoves = new EnumMap<GHOST, MOVE>(GHOST.class);
         Random rnd = new Random ();
         for (GHOST ghost : GHOST.values()) {
-            if (game.getGhostCurrentNodeIndex(ghost)==game.getGhostInitialNodeIndex()) continue;
+           
+            if (!game.doesGhostRequireAction(ghost)){ myMoves.put(ghost,  game.getGhostLastMoveMade(ghost)); continue;}
+           
+           
                 
             if (rnd.nextInt(100) <10) {
              myMoves.put(ghost, game.getGhostLastMoveMade(ghost));
              continue;
             }
             
-              MOVE[] possibleMoves = game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
-              
-          //    System.out.println(ghost + " " + game.getGhostCurrentNodeIndex(ghost) +" " + game.getGhostLastMoveMade(ghost));
-              
+              MOVE[]  possibleMoves =  game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
+//              if (isNull(possibleMoves)){
+//                  System.out.println(game.getGhostCurrentNodeIndex(ghost)  + "  " + game.getGhostLastMoveMade(ghost));
+//              }
               if (possibleMoves.length==0) continue;
               MOVE nextMove =  possibleMoves[rnd.nextInt(possibleMoves.length)];
               myMoves.put(ghost, nextMove);
@@ -348,15 +352,10 @@ public class MCTSNode {
 
     }
 
-    public double[] playOutPhase(int initialPill, EnumMap<GHOST, Integer> originEdibleGhost) {
-        int steps = LIMIT_MOVE;
-        int move = 0;
+    public double[] playOutPhase(int initialPill, int totalEdibleTime) {
+         int move = 0;
 
-        int totalEdibleTime = 0;
-
-        for (GHOST ghost : GHOST.values()) {
-            totalEdibleTime += originEdibleGhost.get(ghost);
-        }
+     
 
         double rewardX[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
         rewardX[2] = this.rewardPlayout[2];
@@ -364,12 +363,11 @@ public class MCTSNode {
         //Game simulatedGame = this.game.copy(false);
         Game simulatedGame = this.game;
 
-        int oldScore = simulatedGame.getScore();
-        int currentLevel = simulatedGame.getCurrentLevel();
+      
         double rewardGhost = 0;
 
      
-        while (move <= steps && !simulatedGame.wasPacManEaten()) {
+        while (move <= LIMIT_MOVE && !simulatedGame.wasPacManEaten()) {
             
             if (totalEdibleTime!=0 && simulatedGame.wasPowerPillEaten() ) break;
             
@@ -453,16 +451,12 @@ public class MCTSNode {
         //debug("reward PlayOut :" +simulatedGame.getScore()+" - "+ this.reward  );
     }
 
-    boolean treePhase(int initialPill, MCTSNode currentBestChild, EnumMap<GHOST, Integer> originEdibleGhost) {
+    boolean treePhase(int initialPill, MCTSNode currentBestChild, int totalEdibleTime) {
 
         Game simulatedGame = this.game.copy(false);
         int nodeTaget = currentBestChild.nodeIndex;
 
-        int totalEdibleTime = 0;
-
-        for (GHOST ghost : GHOST.values()) {
-            totalEdibleTime += originEdibleGhost.get(ghost);
-        }
+    
 
         double rewardGhost = 0;
 
@@ -567,11 +561,11 @@ public class MCTSNode {
 
     }
     
-    public static void runMCTS(MCTSNode root, int originPill, EnumMap<GHOST, Integer> originEdibleGhost) {
+    public static void runMCTS(MCTSNode root, int originPill, int totalEdibleTime) {
 
         if (root.isLeaf() || root.hasJustEattenGhost) {
 
-            root.rewardPlayout = root.playOutPhase(originPill, originEdibleGhost); // roi sao nua?????
+            root.rewardPlayout = root.playOutPhase(originPill, totalEdibleTime); // roi sao nua?????
 
             root.updatStats(root.rewardPlayout);
 
@@ -624,7 +618,7 @@ public class MCTSNode {
 //                    for (MCTSNode child : root.listChild)
 //                        System.out.println("CHILD " + child.nodeIndex + " vi  " + child.maxViValue[0] + "visited " + child.new_visitedCount);
 //              }
-            boolean isReachChild = root.treePhase(originPill, currentBestChild, originEdibleGhost);
+            boolean isReachChild = root.treePhase(originPill, currentBestChild, totalEdibleTime);
 
             if (!isReachChild) {
                 // child of root
@@ -634,7 +628,7 @@ public class MCTSNode {
                 }
 
                 double reward[] = new double[3];
-                reward = root.playOutPhase(originPill, originEdibleGhost);
+                reward = root.playOutPhase(originPill, totalEdibleTime);
                 root.updatStats(reward);
 
                 root.maxViValue[0] = root.new_sumReward[0] / root.new_visitedCount;
@@ -652,7 +646,7 @@ public class MCTSNode {
                     currentBestChild.maxViValue[1] = 1;
                     currentBestChild.maxViValue[2] = 0;
                 } else {
-                    runMCTS(currentBestChild, originPill, originEdibleGhost);
+                    runMCTS(currentBestChild, originPill, totalEdibleTime);
                 }
 
                 for (MCTSNode child : root.listChild) {
@@ -723,7 +717,7 @@ public class MCTSNode {
    
    }
      */
-    public MOVE selectBestMove(Game gameX) {
+    public MOVE selectBestMove(Game gameX, Game game) {
         Random R = new Random();
         double max = -1;
         MOVE nextMove = MOVE.NEUTRAL;
@@ -763,7 +757,7 @@ public class MCTSNode {
          nextMove = expectedMove;
       // System.out.println("SELECT " + nextMove);
         
-        if (!safeMoveCheck(gameX, expectedMove, tagetNode)) {
+        if (!safeMoveCheck(game, expectedMove, tagetNode)) {
          //   for (MOVE move : gameX.getPossibleMoves(gameX.getPacmanCurrentNodeIndex())){
           //  if (safeMoveCheck(gameX, move)) return move;
           //  }
