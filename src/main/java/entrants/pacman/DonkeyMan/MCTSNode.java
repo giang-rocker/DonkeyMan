@@ -9,6 +9,7 @@ import entrants.pacman.DonkeyMan.Junction.POSITION;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedList;
+import static java.util.Objects.isNull;
 import java.util.Queue;
 import java.util.Random;
 import pacman.game.Constants;
@@ -37,7 +38,7 @@ public class MCTSNode {
     final static double esp = 0.000001;
     final static double DECREASE_DECAY = 0.8;
     final static double DECREASE_CHANGEMOVE = 0.8;
-    final static double DECREASE_WASTEMOVE = 0.5;
+    final static double DECREASE_WASTEMOVE = 0.9;
 
     double MIN_SURVIVAL;
     final static double NOMAL_MIN_SURVIVAL = 0.7;
@@ -327,17 +328,20 @@ public class MCTSNode {
         EnumMap<GHOST, MOVE> myMoves = new EnumMap<GHOST, MOVE>(GHOST.class);
         Random rnd = new Random ();
         for (GHOST ghost : GHOST.values()) {
-            if (game.getGhostCurrentNodeIndex(ghost)==game.getGhostInitialNodeIndex()) continue;
+           
+            if (!game.doesGhostRequireAction(ghost)){ myMoves.put(ghost,  game.getGhostLastMoveMade(ghost)); continue;}
+           
+           
                 
             if (rnd.nextInt(100) <10) {
              myMoves.put(ghost, game.getGhostLastMoveMade(ghost));
              continue;
             }
             
-              MOVE[] possibleMoves = game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
-              
-          //    System.out.println(ghost + " " + game.getGhostCurrentNodeIndex(ghost) +" " + game.getGhostLastMoveMade(ghost));
-              
+              MOVE[]  possibleMoves =  game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
+//              if (isNull(possibleMoves)){
+//                  System.out.println(game.getGhostCurrentNodeIndex(ghost)  + "  " + game.getGhostLastMoveMade(ghost));
+//              }
               if (possibleMoves.length==0) continue;
               MOVE nextMove =  possibleMoves[rnd.nextInt(possibleMoves.length)];
               myMoves.put(ghost, nextMove);
@@ -348,15 +352,10 @@ public class MCTSNode {
 
     }
 
-    public double[] playOutPhase(int initialPill, EnumMap<GHOST, Integer> originEdibleGhost) {
-        int steps = LIMIT_MOVE;
-        int move = 0;
+    public double[] playOutPhase(int initialPill, int totalEdibleTime) {
+         int move = 0;
 
-        int totalEdibleTime = 0;
-
-        for (GHOST ghost : GHOST.values()) {
-            totalEdibleTime += originEdibleGhost.get(ghost);
-        }
+     
 
         double rewardX[] = new double[3]; // 0 : survival 1: Pill reward 2 : ghost reward
         rewardX[2] = this.rewardPlayout[2];
@@ -364,12 +363,11 @@ public class MCTSNode {
         //Game simulatedGame = this.game.copy(false);
         Game simulatedGame = this.game;
 
-        int oldScore = simulatedGame.getScore();
-        int currentLevel = simulatedGame.getCurrentLevel();
+      
         double rewardGhost = 0;
 
      
-        while (move <= steps && !simulatedGame.wasPacManEaten()) {
+        while (move <= LIMIT_MOVE && !simulatedGame.wasPacManEaten()) {
             
             if (totalEdibleTime!=0 && simulatedGame.wasPowerPillEaten() ) break;
             
@@ -453,16 +451,12 @@ public class MCTSNode {
         //debug("reward PlayOut :" +simulatedGame.getScore()+" - "+ this.reward  );
     }
 
-    boolean treePhase(int initialPill, MCTSNode currentBestChild, EnumMap<GHOST, Integer> originEdibleGhost) {
+    boolean treePhase(int initialPill, MCTSNode currentBestChild, int totalEdibleTime) {
 
         Game simulatedGame = this.game.copy(false);
         int nodeTaget = currentBestChild.nodeIndex;
 
-        int totalEdibleTime = 0;
-
-        for (GHOST ghost : GHOST.values()) {
-            totalEdibleTime += originEdibleGhost.get(ghost);
-        }
+    
 
         double rewardGhost = 0;
 
@@ -566,12 +560,11 @@ public class MCTSNode {
         }
 
     }
-    
-    public static void runMCTS(MCTSNode root, int originPill, EnumMap<GHOST, Integer> originEdibleGhost) {
+    static int maxDepth =3;
+    public static void runMCTS(MCTSNode root, int originPill, int totalEdibleTime) {
+          if (root.isLeaf() || root.hasJustEattenGhost) {
 
-        if (root.isLeaf() || root.hasJustEattenGhost) {
-
-            root.rewardPlayout = root.playOutPhase(originPill, originEdibleGhost); // roi sao nua?????
+            root.rewardPlayout = root.playOutPhase(originPill, totalEdibleTime); // roi sao nua?????
 
             root.updatStats(root.rewardPlayout);
 
@@ -624,7 +617,7 @@ public class MCTSNode {
 //                    for (MCTSNode child : root.listChild)
 //                        System.out.println("CHILD " + child.nodeIndex + " vi  " + child.maxViValue[0] + "visited " + child.new_visitedCount);
 //              }
-            boolean isReachChild = root.treePhase(originPill, currentBestChild, originEdibleGhost);
+            boolean isReachChild = root.treePhase(originPill, currentBestChild, totalEdibleTime);
 
             if (!isReachChild) {
                 // child of root
@@ -634,7 +627,7 @@ public class MCTSNode {
                 }
 
                 double reward[] = new double[3];
-                reward = root.playOutPhase(originPill, originEdibleGhost);
+                reward = root.playOutPhase(originPill, totalEdibleTime);
                 root.updatStats(reward);
 
                 root.maxViValue[0] = root.new_sumReward[0] / root.new_visitedCount;
@@ -652,7 +645,7 @@ public class MCTSNode {
                     currentBestChild.maxViValue[1] = 1;
                     currentBestChild.maxViValue[2] = 0;
                 } else {
-                    runMCTS(currentBestChild, originPill, originEdibleGhost);
+                    runMCTS(currentBestChild, originPill, totalEdibleTime);
                 }
 
                 for (MCTSNode child : root.listChild) {
@@ -675,11 +668,11 @@ public class MCTSNode {
 
                 }
 
-                if (root.game.getScore() == currentBestChild.game.getScore()) {
-                    if (MCTSNode.currentTactic != 0) {
-                        currentBestChild.rewardPlayout[MCTSNode.currentTactic] *= DECREASE_WASTEMOVE;
-                    }
-                }
+//                if (root.game.getScore() == currentBestChild.game.getScore()) {
+//                    if (MCTSNode.currentTactic != 0) {
+//                        currentBestChild.rewardPlayout[MCTSNode.currentTactic] *= DECREASE_WASTEMOVE;
+//                    }
+//                }
 
                 root.updatStats(currentBestChild.rewardPlayout);
 
@@ -807,18 +800,20 @@ public class MCTSNode {
     static boolean safeMoveCheck(Game gameX, MOVE expectedMove, int nodeTaget) {
 
         Game simulateGame = gameX.copy(false);
-        int currentLevel = gameX.getCurrentLevel();
+        int currentLevel = simulateGame.getCurrentLevel();
         EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
-        while (currentLevel == gameX.getCurrentLevel() && !gameX.wasPacManEaten() && gameX.getPacmanCurrentNodeIndex() != nodeTaget) {
+        while (currentLevel == simulateGame.getCurrentLevel() && !simulateGame.wasPacManEaten() && simulateGame.getPacmanCurrentNodeIndex() != nodeTaget) {
 
             for (GHOST ghost : GHOST.values()) {
-                MOVE move = gameX.getGhostLastMoveMade(ghost);
+                MOVE move = simulateGame.getGhostLastMoveMade(ghost);
                 if (move != null) {
                     listGhostMove.put(ghost, move);
                 }
+                else 
+                    listGhostMove.put(ghost, MOVE.NEUTRAL);
             }
 
-            gameX.advanceGame(expectedMove, listGhostMove);
+            simulateGame.advanceGame(expectedMove, listGhostMove);
 
         }
       
@@ -827,7 +822,7 @@ public class MCTSNode {
 //        if(!simulateGame.wasPacManEaten() && simulateGame.getPacmanCurrentNodeIndex() == nodeTaget)
 //         simulateGame.advanceGame(expectedMove, listGhostMove);
         
-        if (!gameX.wasPacManEaten() && (gameX.getPacmanCurrentNodeIndex() == nodeTaget || currentLevel != gameX.getCurrentLevel())) {
+        if (!simulateGame.wasPacManEaten() && (simulateGame.getPacmanCurrentNodeIndex() == nodeTaget || currentLevel != simulateGame.getCurrentLevel())) {
             return true;
         }
 

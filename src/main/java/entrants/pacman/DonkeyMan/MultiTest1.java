@@ -32,7 +32,7 @@ import pacman.game.util.Stats;
  *
  * @author Giang
  */
-public class MultiTest {
+public class MultiTest1 {
 
     public Stats[] runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<Constants.GHOST, MOVE>> ghostController, int trials, String description, int tickLimit, boolean visual) {
         Stats stats = new Stats(description);
@@ -52,8 +52,8 @@ public class MultiTest {
 
                 if (visual) {
                     gv = new GameView(game).showGame();
-                    gv.getFrame().setLocation(200, 600);
-                    gv.getFrame().setTitle("Experiment for MyPacMan");
+                    gv.getFrame().setLocation(450, 600);
+                    gv.getFrame().setTitle("Experiment for MyPacMan1");
 
                     if (pacManController instanceof HumanController) {
 //                System.out.println("Here");
@@ -83,9 +83,11 @@ public class MultiTest {
                 System.out.println("Game finished: " + i + "  Score: " + game.getScore() + " Maze: " + game.getCurrentLevel() + " Time: " + game.getTotalTime());
                 if(visual)
                 gv.getFrame().dispose();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
         }
         long timeTaken = System.currentTimeMillis() - startTime;
         stats.setMsTaken(timeTaken);
@@ -95,15 +97,14 @@ public class MultiTest {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("START EXPERIEMNT MY PACMAN - ORIGINAL GME STATE - PILL MEMORY ONLY");
+        System.out.println("START EXPERIEMNT MY PACMAN 1 - GHOST GENERATE MOVE - EDIBLE GHOST RESET");
 
-        int numOfGame = 100;//Integer.parseInt(args[0]);
+        int numOfGame = 100;// Integer.parseInt(args[0]);
         System.out.println("RUN " + numOfGame + " games");
 
-        MultiTest mt = new MultiTest();
+        MultiTest1 mt = new MultiTest1();
 
-        Stats stats[] = mt.runExperiment(new MyPacMan(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
-
+        Stats stats[] = mt.runExperiment(new MyPacMan1(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
         for (int i = 0; i < stats.length; i++) {
             System.out.println(stats[i]);
         }

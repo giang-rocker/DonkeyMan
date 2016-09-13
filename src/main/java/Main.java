@@ -9,8 +9,7 @@ import examples.poPacMan.POPacMan;
 public class Main {
 
     public static void main(String[] args) {
-
-        Executor executor = new Executor(true, true);
+         Executor executor = new Executor(true, true);
         MyPacMan X = new MyPacMan();
         
         executor.runGameTimed(X, new POCommGhosts(50), true);

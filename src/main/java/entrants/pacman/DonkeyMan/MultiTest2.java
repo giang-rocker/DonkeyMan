@@ -20,6 +20,7 @@ import pacman.controllers.HumanController;
 import pacman.controllers.examples.po.POGhosts;
 import pacman.game.Constants;
 import static pacman.game.Constants.DELAY;
+import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 
 import pacman.game.Game;
@@ -32,9 +33,9 @@ import pacman.game.util.Stats;
  *
  * @author Giang
  */
-public class MultiTest {
+public class MultiTest2 {
 
-    public Stats[] runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<Constants.GHOST, MOVE>> ghostController, int trials, String description, int tickLimit, boolean visual) {
+    public Stats[] runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController, int trials, String description, int tickLimit, boolean visual) {
         Stats stats = new Stats(description);
         Stats ticks = new Stats(description + " Ticks");
         Random rnd = new Random(0);
@@ -52,17 +53,8 @@ public class MultiTest {
 
                 if (visual) {
                     gv = new GameView(game).showGame();
-                    gv.getFrame().setLocation(200, 600);
-                    gv.getFrame().setTitle("Experiment for MyPacMan");
-
-                    if (pacManController instanceof HumanController) {
-//                System.out.println("Here");
-                        gv.setFocusable(true);
-                        gv.requestFocus();
-                        gv.setPO(true);
-                        gv.addKeyListener(((HumanController) pacManController).getKeyboardInput());
-//                System.out.println("KeyListener added");
-                    }
+                    gv.getFrame().setLocation(700, 600);
+                    gv.getFrame().setTitle("Experiment for MyPacMan2");
                 }
 
                 while (!game.gameOver()) {
@@ -70,7 +62,7 @@ public class MultiTest {
                         break;
                     }
                     game.advanceGame(
-                            pacManController.getMove(game.copy((true) ? Constants.GHOST.values().length + 1 : -1), System.currentTimeMillis() + DELAY),
+                            pacManController.getMove(game.copy((true) ? GHOST.values().length + 1 : -1), System.currentTimeMillis() + DELAY),
                             ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
 
                     if (visual) {
@@ -95,14 +87,14 @@ public class MultiTest {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("START EXPERIEMNT MY PACMAN - ORIGINAL GME STATE - PILL MEMORY ONLY");
+        System.out.println("START EXPERIEMNT MY PACMAN 2 - GHOST GENERATE MOVE - NO EDIBLE GHOST RESET");
 
-        int numOfGame = 100;//Integer.parseInt(args[0]);
+         int numOfGame = Integer.parseInt(args[0]);
         System.out.println("RUN " + numOfGame + " games");
 
-        MultiTest mt = new MultiTest();
+        MultiTest2 mt = new MultiTest2();
 
-        Stats stats[] = mt.runExperiment(new MyPacMan(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
+        Stats stats[] = mt.runExperiment(new MyPacMan2(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
 
         for (int i = 0; i < stats.length; i++) {
             System.out.println(stats[i]);
@@ -110,6 +102,10 @@ public class MultiTest {
 
         System.out.println("END");
 
+    }
+
+    private Stats[] runExperiment(MyPacMan2 myPacMan2, POCommGhosts poCommGhosts, int numOfGame, String _done_) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

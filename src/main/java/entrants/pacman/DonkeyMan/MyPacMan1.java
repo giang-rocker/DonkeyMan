@@ -1,6 +1,9 @@
 package entrants.pacman.DonkeyMan;
 
+import examples.commGhosts.POCommGhosts;
 import java.util.EnumMap;
+import java.util.Random;
+import pacman.Executor;
 import pacman.controllers.PacmanController;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
@@ -14,43 +17,40 @@ import pacman.game.internal.PacMan;
  * fill in the getMove() method. Any additional classes you write should either
  * be placed in this package or sub-packages (e.g., entrants.pacman.username).
  */
-public class MyPacMan extends PacmanController {
+public class MyPacMan1 extends PacmanController {
 
     private MOVE myMove = MOVE.NEUTRAL;
     GameInfo lastInfo;
-    Game lastStage;
-
+    
     MCTSNode root;
     boolean firstTime = true;
     int currentLevel;
     public int simmulateTime = 0;
     public int moves = 0;
 
-  //  ExtractorForm extractor;
-
-    public MyPacMan() {
+  //   ExtractorForm extractor;
+    public MyPacMan1() {
         simmulateTime = 0;
         moves = 0;
-        lastStage = new Game(0);
-        currentLevel = -1;
-    //   extractor = new ExtractorForm();
-     //   extractor.setVisible(true);
-    
+          currentLevel = -1;
+    //       extractor = new ExtractorForm();
+     //      extractor.setVisible(true);
+
     }
 
     int Maxlen = 0;
 
     // Game info
     // pill, ghost, power pill
-    public void getNewGameInfo(Game game) {
+    public void getNewGameInfo(Game gameX, Game game) {
         // set pill
-        int listActivePillIndice [] = game.getActivePillsIndices();
+        int listActivePillIndice[] = game.getActivePillsIndices();
         for (int i = 0; i < listActivePillIndice.length; i++) {
             lastInfo.setPillAtIndex(game.getPillIndex(listActivePillIndice[i]), true);
         }
 
         // set Power pill
-        int listActivePowerPillIndice [] = game.getActivePowerPillsIndices();
+        int listActivePowerPillIndice[] = game.getActivePowerPillsIndices();
         for (int i = 0; i < listActivePowerPillIndice.length; i++) {
             lastInfo.setPowerPillAtIndex(game.getPowerPillIndex(listActivePowerPillIndice[i]), true);
         }
@@ -62,39 +62,52 @@ public class MyPacMan extends PacmanController {
         for (GHOST ghost : GHOST.values()) {
             // seen ghost -1 : out of vision
             int ghostIndex = game.getGhostCurrentNodeIndex(ghost);
+            
+            int ghostLastIndex = gameX.getGhostCurrentNodeIndex(ghost);
+            
             if (ghostIndex != -1) {
                 lastInfo.setGhostIndex(ghost, new Ghost(ghost, ghostIndex, game.getGhostEdibleTime(ghost), game.getGhostLairTime(ghost), game.getGhostLastMoveMade(ghost)));
-            } else {
+            } else if (  ghostLastIndex ==-1 || game.wasPowerPillEaten() )
+            {
                 lastInfo.setGhostIndex(ghost, new Ghost(ghost, game.getCurrentMaze().lairNodeIndex, -1, -1, MOVE.NEUTRAL));
             }
+          
+           
 
         }
 
     }
- Game gameX;
-    // DEFAULT INFORMATION FROM GAME - REMEMBER PILL & POWER PILL ONLY
+   
+    
+    // DEFAULT INFORMATION FROM GAME
+    // SAVE PILL & POWER PILL
+    // GENERATE UNSEEN GHOST MOVE 
+     Game gameX;
     @Override
     public MOVE getMove(Game game, long timeDue) {
         {
-           
-         
-                  
+            
             // check new Maze was reached
-            if (currentLevel != game.getCurrentLevel() || game.getScore()==0 ) {
+            if (currentLevel != game.getCurrentLevel() || game.getScore()==0 )  {
                 currentLevel = game.getCurrentLevel();
                 lastInfo = game.getBlankGameInfo();
-           
+            
+                
+                gameX = game.copy(false);
+                
             }
-
-            getNewGameInfo(game);
+             
+            // add more information for gameInfo - GHOST - PILL - POWER PILL
+            getNewGameInfo(gameX, game); // get infor for lastInfo
             gameX = game.getGameFromInfo(lastInfo);
-            
-        //    System.out.println(game.getActivePillsIndices().length + " " + gameX.getActivePillsIndices().length );
-            
-     //       lastStage = game.getGameFromInfo(lastInfo);
-          //  System.out.println(gameX.getMazeIndex() +"Y");
-         //   extractor.gameX = gameX.copy(false);
+        
+            //   gameX = game.getGameFromInfo(lastInfo);
 
+            //    System.out.println(game.getActivePillsIndices().length + " " + gameX.getActivePillsIndices().length );
+            //       lastStage = game.getGameFromInfo(lastInfo);
+            //  System.out.println(gameX.getMazeIndex() +"Y");
+       //          extractor.gameX = gameX.copy(false);
+                 
             if (gameX.wasPowerPillEaten()) {
                 MCTSNode.hasJustChangeMove = false;
             }
@@ -115,10 +128,9 @@ public class MyPacMan extends PacmanController {
             int numActivePill = gameX.getNumberOfActivePills();
 
             // get timeOfEidibleGhost
-             int totalEdilbeTime = 0 ;
             boolean isGhostInRange = false;
             EnumMap<GHOST, Integer> listEdibleGhost = new EnumMap<>(GHOST.class);
-
+            int totalEdilbeTime = 0 ;
             for (GHOST ghost : GHOST.values()) {
 
                 int time = gameX.getGhostEdibleTime(ghost);
@@ -130,21 +142,23 @@ public class MyPacMan extends PacmanController {
 
                     isGhostInRange = true;
 
-                   
                 }
 
-                totalEdilbeTime +=time;
-                
+                listEdibleGhost.put(ghost, time);
+                totalEdilbeTime+=time;
 
             }
 
             //     System.out.println("\nEldible Ghost " + numOfGhostInRange);
             // RUN MCTS
+            
+            
             while (System.currentTimeMillis() < (timeDue - 15)) {
                 root.init(gameX);
                 MCTSNode.runMCTS(root, numActivePill, totalEdilbeTime);
-             }
-             // re-check tactic
+            }
+
+            // re-check tactic
             MCTSNode.currentTactic = 0;
             if ((root.maxViValue[0]) > MCTSNode.NOMAL_MIN_SURVIVAL) {
                 if (isGhostInRange && root.maxViValue[2] - 0.001 > 0) {
@@ -153,24 +167,30 @@ public class MyPacMan extends PacmanController {
                     MCTSNode.currentTactic = 1;
                 }
             }
- 
-            
-           
+
             MOVE nextMove = root.selectBestMove(gameX.copy(false));
-     
-             SimulateGhostMove ghostsMove = new SimulateGhostMove();
+
+            SimulateGhostMove ghostsMove = new SimulateGhostMove();
             EnumMap<GHOST, MOVE> listGhostMove = new EnumMap<>(GHOST.class);
              
             listGhostMove = ghostsMove.getMove(gameX);
             gameX.advanceGame(nextMove, listGhostMove);
-            
-       //     System.out.println(root.new_visitedCount);
-      //      if (System.currentTimeMillis() > timeDue) System.out.println("FAIL");
+             
+
+          //     System.out.println(root.new_visitedCount + "");//" " + lastStage.getActivePillsIndices().length );
             //   System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
             //  moves++;
             //  simmulateTime+=root.new_visitedCount;
             
             return nextMove;
         }
+    }
+
+ public static void main(String[] args) {
+
+        Executor executor = new Executor(true, true);
+        MyPacMan1 X = new MyPacMan1();
+        executor.runGameTimedRecorded(X, new POCommGhosts(50), true,"Record");
+     
     }
 }
