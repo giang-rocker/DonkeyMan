@@ -89,7 +89,7 @@ public class MultiTest2 {
     public static void main(String[] args) throws IOException {
         System.out.println("START EXPERIEMNT MY PACMAN 2 - GHOST GENERATE MOVE - NO EDIBLE GHOST RESET");
 
-         int numOfGame = Integer.parseInt(args[0]);
+         int numOfGame =100;// Integer.parseInt(args[0]);
         System.out.println("RUN " + numOfGame + " games");
 
         MultiTest2 mt = new MultiTest2();
