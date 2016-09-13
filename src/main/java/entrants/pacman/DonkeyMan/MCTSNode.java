@@ -38,7 +38,7 @@ public class MCTSNode {
     final static double esp = 0.000001;
     final static double DECREASE_DECAY = 0.8;
     final static double DECREASE_CHANGEMOVE = 0.8;
-    final static double DECREASE_WASTEMOVE = 0.9;
+    final static double DECREASE_WASTEMOVE = 0.5;
 
     double MIN_SURVIVAL;
     final static double NOMAL_MIN_SURVIVAL = 0.7;
@@ -560,9 +560,10 @@ public class MCTSNode {
         }
 
     }
-    static int maxDepth =3;
+    
     public static void runMCTS(MCTSNode root, int originPill, int totalEdibleTime) {
-          if (root.isLeaf() || root.hasJustEattenGhost) {
+
+        if (root.isLeaf() || root.hasJustEattenGhost) {
 
             root.rewardPlayout = root.playOutPhase(originPill, totalEdibleTime); // roi sao nua?????
 
@@ -668,11 +669,11 @@ public class MCTSNode {
 
                 }
 
-//                if (root.game.getScore() == currentBestChild.game.getScore()) {
-//                    if (MCTSNode.currentTactic != 0) {
-//                        currentBestChild.rewardPlayout[MCTSNode.currentTactic] *= DECREASE_WASTEMOVE;
-//                    }
-//                }
+                if (root.game.getScore() == currentBestChild.game.getScore()) {
+                    if (MCTSNode.currentTactic != 0) {
+                        currentBestChild.rewardPlayout[MCTSNode.currentTactic] *= DECREASE_WASTEMOVE;
+                    }
+                }
 
                 root.updatStats(currentBestChild.rewardPlayout);
 

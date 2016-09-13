@@ -153,7 +153,7 @@ public class MyPacMan1 extends PacmanController {
             // RUN MCTS
             
             
-            while (System.currentTimeMillis() < (timeDue - 15)) {
+            while (System.currentTimeMillis() < (timeDue - 2)) {
                 root.init(gameX);
                 MCTSNode.runMCTS(root, numActivePill, totalEdilbeTime);
             }

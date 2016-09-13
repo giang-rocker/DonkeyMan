@@ -140,7 +140,7 @@ public class MyPacMan extends PacmanController {
 
             //     System.out.println("\nEldible Ghost " + numOfGhostInRange);
             // RUN MCTS
-            while (System.currentTimeMillis() < (timeDue - 15)) {
+            while (System.currentTimeMillis() < (timeDue - 2)) {
                 root.init(gameX);
                 MCTSNode.runMCTS(root, numActivePill, totalEdilbeTime);
              }
@@ -164,8 +164,7 @@ public class MyPacMan extends PacmanController {
             listGhostMove = ghostsMove.getMove(gameX);
             gameX.advanceGame(nextMove, listGhostMove);
             
-       //     System.out.println(root.new_visitedCount);
-      //      if (System.currentTimeMillis() > timeDue) System.out.println("FAIL");
+            
             //   System.out.println(MCTSNode.currentTactic + " value  " + root.maxViValue[MCTSNode.currentTactic]);
             //  moves++;
             //  simmulateTime+=root.new_visitedCount;

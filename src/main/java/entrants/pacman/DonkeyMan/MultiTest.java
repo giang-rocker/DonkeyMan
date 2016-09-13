@@ -81,7 +81,6 @@ public class MultiTest {
                 ticks.add(game.getCurrentLevelTime());
                 i++;
                 System.out.println("Game finished: " + i + "  Score: " + game.getScore() + " Maze: " + game.getCurrentLevel() + " Time: " + game.getTotalTime());
-                if(visual)
                 gv.getFrame().dispose();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -97,12 +96,12 @@ public class MultiTest {
     public static void main(String[] args) throws IOException {
         System.out.println("START EXPERIEMNT MY PACMAN - ORIGINAL GME STATE - PILL MEMORY ONLY");
 
-        int numOfGame = 100;//Integer.parseInt(args[0]);
+        int numOfGame = Integer.parseInt(args[0]);
         System.out.println("RUN " + numOfGame + " games");
 
         MultiTest mt = new MultiTest();
 
-        Stats stats[] = mt.runExperiment(new MyPacMan(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
+        Stats stats[] = mt.runExperiment(new MyPacMan(), new POCommGhosts(50), numOfGame, " DONE ", -1, true);
 
         for (int i = 0; i < stats.length; i++) {
             System.out.println(stats[i]);

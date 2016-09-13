@@ -81,7 +81,7 @@ public class MultiTest1 {
                 ticks.add(game.getCurrentLevelTime());
                 i++;
                 System.out.println("Game finished: " + i + "  Score: " + game.getScore() + " Maze: " + game.getCurrentLevel() + " Time: " + game.getTotalTime());
-                if(visual)
+
                 gv.getFrame().dispose();
 
             } catch (Exception e) {
@@ -99,12 +99,12 @@ public class MultiTest1 {
     public static void main(String[] args) throws IOException {
         System.out.println("START EXPERIEMNT MY PACMAN 1 - GHOST GENERATE MOVE - EDIBLE GHOST RESET");
 
-        int numOfGame = 100;// Integer.parseInt(args[0]);
+        int numOfGame = Integer.parseInt(args[0]);
         System.out.println("RUN " + numOfGame + " games");
 
         MultiTest1 mt = new MultiTest1();
 
-        Stats stats[] = mt.runExperiment(new MyPacMan1(), new POCommGhosts(50), numOfGame, " DONE ", -1, false);
+        Stats stats[] = mt.runExperiment(new MyPacMan1(), new POCommGhosts(50), numOfGame, " DONE ", -1, true);
         for (int i = 0; i < stats.length; i++) {
             System.out.println(stats[i]);
         }
